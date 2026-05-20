@@ -1,0 +1,187 @@
+import { useState } from 'react'
+import {
+  Smartphone,
+  Wifi,
+  WifiOff,
+  Battery,
+  BatteryFull,
+  BatteryMedium,
+  BatteryLow,
+  RefreshCcw,
+  MoreVertical,
+  Plus,
+  QrCode,
+} from 'lucide-react'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import useAppStore from '@/stores/useAppStore'
+import { useToast } from '@/hooks/use-toast'
+
+export default function Devices() {
+  const { devices, syncDevice } = useAppStore()
+  const { toast } = useToast()
+  const [newDeviceName, setNewDeviceName] = useState('')
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+
+  const handleSync = () => {
+    if (!newDeviceName) return
+    syncDevice(newDeviceName)
+    setIsDialogOpen(false)
+    setNewDeviceName('')
+    toast({
+      title: 'Aparelho Conectado',
+      description: `O aparelho ${newDeviceName} foi sincronizado com sucesso.`,
+    })
+  }
+
+  const getBatteryIcon = (level: number) => {
+    if (level > 80) return <BatteryFull className="h-4 w-4 text-emerald-500" />
+    if (level > 30) return <BatteryMedium className="h-4 w-4 text-amber-500" />
+    return <BatteryLow className="h-4 w-4 text-destructive" />
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Meus Dispositivos</h1>
+          <p className="text-muted-foreground mt-1">
+            Gerencie os celulares corporativos conectados à central.
+          </p>
+        </div>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="gap-2">
+              <Plus className="h-4 w-4" /> Conectar Novo Aparelho
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Sincronizar Novo Aparelho</DialogTitle>
+              <DialogDescription>
+                Abra o aplicativo da central no celular e escaneie o código QR abaixo para conectar.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col items-center justify-center py-6 gap-6">
+              <div className="bg-white p-4 rounded-lg shadow-sm border">
+                <QrCode className="h-48 w-48 text-slate-800" />
+              </div>
+              <div className="w-full space-y-2">
+                <Label htmlFor="name">Nome de Identificação (Opcional)</Label>
+                <Input
+                  id="name"
+                  placeholder="Ex: Comercial WhatsApp 2"
+                  value={newDeviceName}
+                  onChange={(e) => setNewDeviceName(e.target.value)}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleSync}>Simular Conexão</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {devices.map((device) => (
+          <Card
+            key={device.id}
+            className="group overflow-hidden transition-all hover:shadow-md hover:-translate-y-1"
+          >
+            <CardHeader className="pb-4">
+              <div className="flex justify-between items-start">
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`p-3 rounded-xl ${device.status === 'online' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}
+                  >
+                    <Smartphone className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">{device.name}</CardTitle>
+                    <p className="text-xs text-muted-foreground">{device.model}</p>
+                  </div>
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem>Renomear</DropdownMenuItem>
+                    <DropdownMenuItem>Re-sincronizar</DropdownMenuItem>
+                    <DropdownMenuItem className="text-destructive">Desconectar</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground flex items-center gap-2">
+                    Status da Conexão
+                  </span>
+                  {device.status === 'online' ? (
+                    <Badge
+                      variant="outline"
+                      className="border-emerald-200 bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:border-emerald-800"
+                    >
+                      <Wifi className="h-3 w-3 mr-1" /> Online
+                    </Badge>
+                  ) : (
+                    <Badge
+                      variant="outline"
+                      className="border-slate-200 bg-slate-50 text-slate-500 dark:bg-slate-900 dark:border-slate-800"
+                    >
+                      <WifiOff className="h-3 w-3 mr-1" /> Offline
+                    </Badge>
+                  )}
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground flex items-center gap-2">Bateria</span>
+                  <span className="flex items-center font-medium">
+                    {getBatteryIcon(device.battery)} <span className="ml-1">{device.battery}%</span>
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter className="bg-muted/30 py-3 border-t">
+              <Button
+                variant="ghost"
+                className="w-full text-xs h-8 text-primary hover:text-primary/80"
+              >
+                <RefreshCcw className="h-3 w-3 mr-2" /> Forçar Sincronização
+              </Button>
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
+    </div>
+  )
+}
