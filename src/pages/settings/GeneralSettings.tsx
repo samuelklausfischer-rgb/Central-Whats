@@ -10,12 +10,14 @@ export default function GeneralSettings() {
       <Card>
         <CardHeader>
           <CardTitle>Perfil da Empresa</CardTitle>
-          <CardDescription>Informações gerais sobre a conta da empresa.</CardDescription>
+          <CardDescription>
+            Informações gerais sobre a corporação e controle interno.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 max-w-2xl">
           <div className="space-y-2">
-            <Label htmlFor="companyName">Nome da Empresa</Label>
-            <Input id="companyName" defaultValue="Central Celular Corporativo" />
+            <Label htmlFor="companyName">Nome do Departamento Gestor</Label>
+            <Input id="companyName" defaultValue="Operações Centrais" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="supportEmail">E-mail de Suporte</Label>

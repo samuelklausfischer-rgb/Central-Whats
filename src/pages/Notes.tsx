@@ -63,12 +63,12 @@ export default function Notes() {
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2 shrink-0">
-                <Plus className="h-4 w-4" /> Nova Anotação
+                <Plus className="h-4 w-4" /> Novo Registro
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Criar Nova Anotação</DialogTitle>
+                <DialogTitle>Criar Registro Interno</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
@@ -84,7 +84,7 @@ export default function Notes() {
                   <Textarea
                     value={newContent}
                     onChange={(e) => setNewContent(e.target.value)}
-                    placeholder="Escreva sua anotação aqui..."
+                    placeholder="Descreva detalhes, acompanhamentos ou dados importantes..."
                     className="min-h-[150px]"
                   />
                 </div>
@@ -93,7 +93,7 @@ export default function Notes() {
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Cancelar
                 </Button>
-                <Button onClick={handleCreate}>Salvar Anotação</Button>
+                <Button onClick={handleCreate}>Salvar Registro</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>

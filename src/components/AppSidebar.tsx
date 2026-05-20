@@ -3,9 +3,11 @@ import {
   LayoutDashboard,
   Smartphone,
   MessageSquare,
-  KanbanSquare,
+  ListTodo,
   StickyNote,
   Settings,
+  ChevronRight,
+  User,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -15,17 +17,22 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
 } from '@/components/ui/sidebar'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 
 const navItems = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
   { title: 'Chat', url: '/chat', icon: MessageSquare },
-  { title: 'CRM', url: '/crm', icon: KanbanSquare },
+  { title: 'Tarefas Internas', url: '/crm', icon: ListTodo },
   { title: 'Anotações', url: '/notes', icon: StickyNote },
 ]
 
 export function AppSidebar() {
   const location = useLocation()
+  const isSettingsActive = location.pathname.startsWith('/settings')
 
   return (
     <Sidebar>
@@ -53,24 +60,46 @@ export function AppSidebar() {
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
+
+          <Collapsible defaultOpen={isSettingsActive} className="group/collapsible">
+            <SidebarMenuItem>
+              <CollapsibleTrigger asChild>
+                <SidebarMenuButton tooltip="Configurações" isActive={isSettingsActive}>
+                  <Settings className="h-5 w-5" />
+                  <span className="font-medium">Configurações</span>
+                  <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                </SidebarMenuButton>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <SidebarMenuSub>
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                      asChild
+                      isActive={location.pathname === '/settings/devices'}
+                    >
+                      <Link to="/settings/devices">
+                        <Smartphone className="h-4 w-4" />
+                        <span>Aparelhos</span>
+                      </Link>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                      asChild
+                      isActive={location.pathname === '/settings/general'}
+                    >
+                      <Link to="/settings/general">
+                        <User className="h-4 w-4" />
+                        <span>Perfil e Geral</span>
+                      </Link>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                </SidebarMenuSub>
+              </CollapsibleContent>
+            </SidebarMenuItem>
+          </Collapsible>
         </SidebarMenu>
       </SidebarContent>
-      <SidebarFooter className="p-4 border-t">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              tooltip="Configurações"
-              isActive={location.pathname.startsWith('/settings')}
-            >
-              <Link to="/settings" className="flex items-center gap-3">
-                <Settings className="h-5 w-5 text-muted-foreground" />
-                <span>Configurações</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
     </Sidebar>
   )
 }

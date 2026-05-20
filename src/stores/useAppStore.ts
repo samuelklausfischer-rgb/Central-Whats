@@ -3,11 +3,11 @@ import { createContext, useContext, useState, ReactNode, createElement } from 'r
 export interface Device {
   id: string
   name: string
+  department: string
   model: string
   battery: number
   signal: number
   status: 'online' | 'offline' | 'syncing'
-  unreadCount: number
 }
 
 export interface Message {
@@ -27,13 +27,12 @@ export interface ChatThread {
   unread: boolean
 }
 
-export interface Lead {
+export interface Task {
   id: string
-  name: string
-  status: 'novo' | 'em_progresso' | 'negociacao' | 'ganho' | 'perdido'
-  value: number
+  title: string
+  status: 'pendente' | 'em_andamento' | 'revisao' | 'concluido'
   deviceId: string
-  lastNote: string
+  description: string
 }
 
 export interface Note {
@@ -47,13 +46,13 @@ export interface Note {
 interface AppContextType {
   devices: Device[]
   threads: ChatThread[]
-  leads: Lead[]
+  tasks: Task[]
   notes: Note[]
   addMessage: (threadId: string, text: string) => void
   addNote: (note: Omit<Note, 'id' | 'date'>) => void
-  addLead: (lead: Omit<Lead, 'id'>) => void
-  updateLeadStatus: (leadId: string, status: Lead['status']) => void
-  syncDevice: (name: string) => void
+  addTask: (task: Omit<Task, 'id'>) => void
+  updateTaskStatus: (taskId: string, status: Task['status']) => void
+  syncDevice: (name: string, department: string) => void
   markThreadRead: (threadId: string) => void
 }
 
@@ -62,30 +61,30 @@ const AppContext = createContext<AppContextType | null>(null)
 const initialDevices: Device[] = [
   {
     id: 'd1',
-    name: 'Suporte Vendas',
+    name: 'Celular Financeiro',
+    department: 'Financeiro',
     model: 'Galaxy S22',
     battery: 85,
     signal: 4,
     status: 'online',
-    unreadCount: 2,
   },
   {
     id: 'd2',
-    name: 'Atendimento S21',
+    name: 'Celular Operações',
+    department: 'Operações',
     model: 'Galaxy S21',
     battery: 20,
     signal: 2,
     status: 'offline',
-    unreadCount: 0,
   },
   {
     id: 'd3',
-    name: 'Gerência iPhone',
+    name: 'Admin Central',
+    department: 'Administrativo',
     model: 'iPhone 13',
     battery: 100,
     signal: 5,
     status: 'online',
-    unreadCount: 1,
   },
 ]
 
@@ -93,21 +92,26 @@ const initialThreads: ChatThread[] = [
   {
     id: 't1',
     deviceId: 'd1',
-    contactName: 'Carlos Silva',
+    contactName: 'Fornecedor Alpha',
     contactNumber: '+55 11 99999-1111',
     avatar: 'https://img.usecurling.com/ppl/thumbnail?seed=1',
     unread: true,
     messages: [
       {
         id: 'm1',
-        text: 'Olá, gostaria de saber mais sobre o produto.',
+        text: 'Bom dia, a nota fiscal referente ao mês passado já foi emitida?',
         sender: 'them',
         timestamp: '10:30',
       },
-      { id: 'm2', text: 'Claro! Qual a sua principal dúvida?', sender: 'me', timestamp: '10:32' },
+      {
+        id: 'm2',
+        text: 'Bom dia! Vou verificar com a equipe e já retorno.',
+        sender: 'me',
+        timestamp: '10:32',
+      },
       {
         id: 'm3',
-        text: 'Sobre a integração com outros sistemas.',
+        text: 'Perfeito, aguardo o envio. Obrigado.',
         sender: 'them',
         timestamp: '10:35',
       },
@@ -116,23 +120,25 @@ const initialThreads: ChatThread[] = [
   {
     id: 't2',
     deviceId: 'd1',
-    contactName: 'Ana Souza',
+    contactName: 'Banco - Gerente',
     contactNumber: '+55 11 98888-2222',
     avatar: 'https://img.usecurling.com/ppl/thumbnail?seed=2&gender=female',
     unread: false,
-    messages: [{ id: 'm4', text: 'Obrigada pelo retorno.', sender: 'them', timestamp: 'Ontem' }],
+    messages: [
+      { id: 'm4', text: 'Documentação da conta aprovada.', sender: 'them', timestamp: 'Ontem' },
+    ],
   },
   {
     id: 't3',
     deviceId: 'd3',
-    contactName: 'Diretoria - João',
+    contactName: 'Suporte TI',
     contactNumber: '+55 11 97777-3333',
     avatar: 'https://img.usecurling.com/ppl/thumbnail?seed=3',
     unread: true,
     messages: [
       {
         id: 'm5',
-        text: 'Por favor, envie o relatório atualizado.',
+        text: 'A atualização do sistema de folha foi concluída nesta madrugada.',
         sender: 'them',
         timestamp: '09:00',
       },
@@ -140,53 +146,49 @@ const initialThreads: ChatThread[] = [
   },
 ]
 
-const initialLeads: Lead[] = [
+const initialTasks: Task[] = [
   {
     id: 'l1',
-    name: 'Carlos Silva',
-    status: 'novo',
-    value: 5000,
+    title: 'Verificar NF Fornecedor Alpha',
+    status: 'pendente',
     deviceId: 'd1',
-    lastNote: 'Interesse em integração.',
+    description: 'Cobrar envio da nota fiscal referente a março.',
   },
   {
     id: 'l2',
-    name: 'Empresa X',
-    status: 'em_progresso',
-    value: 12000,
-    deviceId: 'd1',
-    lastNote: 'Aguardando aprovação de orçamento.',
+    title: 'Aprovação de Orçamento TI',
+    status: 'em_andamento',
+    deviceId: 'd3',
+    description: 'Revisar orçamento trimestral enviado pelo suporte.',
   },
   {
     id: 'l3',
-    name: 'Tech Solutions',
-    status: 'negociacao',
-    value: 8500,
-    deviceId: 'd3',
-    lastNote: 'Reunião agendada para sexta.',
+    title: 'Renovação Contrato Logística',
+    status: 'revisao',
+    deviceId: 'd2',
+    description: 'Analisar novas cláusulas antes de assinar.',
   },
   {
     id: 'l4',
-    name: 'Ana Souza',
-    status: 'ganho',
-    value: 3000,
+    title: 'Acesso Bancário',
+    status: 'concluido',
     deviceId: 'd1',
-    lastNote: 'Contrato assinado.',
+    description: 'Liberar acessos para o novo analista financeiro.',
   },
 ]
 
 const initialNotes: Note[] = [
   {
     id: 'n1',
-    title: 'Reunião de Alinhamento',
-    content: 'Discutir novas metas para o próximo trimestre com a equipe de vendas.',
+    title: 'Lembrete: Fechamento Mensal',
+    content: 'Enviar todos os relatórios de despesas até o dia 5.',
     date: '20 Mai, 14:00',
     pinned: true,
   },
   {
     id: 'n2',
-    title: 'Feedback Cliente Alpha',
-    content: 'Eles gostaram da nova interface, mas pediram mais relatórios.',
+    title: 'Contato Terceirizada',
+    content: 'O novo gerente da terceirizada de limpeza se chama Marcos (Ramal 402).',
     date: '19 Mai, 10:15',
     pinned: false,
   },
@@ -195,7 +197,7 @@ const initialNotes: Note[] = [
 export function AppProvider({ children }: { children: ReactNode }) {
   const [devices, setDevices] = useState<Device[]>(initialDevices)
   const [threads, setThreads] = useState<ChatThread[]>(initialThreads)
-  const [leads, setLeads] = useState<Lead[]>(initialLeads)
+  const [tasks, setTasks] = useState<Task[]>(initialTasks)
   const [notes, setNotes] = useState<Note[]>(initialNotes)
 
   const addMessage = (threadId: string, text: string) => {
@@ -238,25 +240,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
     ])
   }
 
-  const addLead = (lead: Omit<Lead, 'id'>) => {
-    setLeads((prev) => [{ ...lead, id: Math.random().toString() }, ...prev])
+  const addTask = (task: Omit<Task, 'id'>) => {
+    setTasks((prev) => [{ ...task, id: Math.random().toString() }, ...prev])
   }
 
-  const updateLeadStatus = (leadId: string, status: Lead['status']) => {
-    setLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, status } : l)))
+  const updateTaskStatus = (taskId: string, status: Task['status']) => {
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status } : t)))
   }
 
-  const syncDevice = (name: string) => {
+  const syncDevice = (name: string, department: string) => {
     setDevices((prev) => [
       ...prev,
       {
         id: Math.random().toString(),
         name,
+        department,
         model: 'Unknown Device',
         battery: 100,
         signal: 5,
         status: 'online',
-        unreadCount: 0,
       },
     ])
   }
@@ -267,12 +269,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       value: {
         devices,
         threads,
-        leads,
+        tasks,
         notes,
         addMessage,
         addNote,
-        addLead,
-        updateLeadStatus,
+        addTask,
+        updateTaskStatus,
         syncDevice,
         markThreadRead,
       },

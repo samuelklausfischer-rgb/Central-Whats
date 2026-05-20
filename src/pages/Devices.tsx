@@ -82,7 +82,7 @@ export default function Devices() {
                 <Label htmlFor="name">Nome de Identificação (Opcional)</Label>
                 <Input
                   id="name"
-                  placeholder="Ex: Comercial WhatsApp 2"
+                  placeholder="Ex: Celular Almoxarifado"
                   value={newDeviceName}
                   onChange={(e) => setNewDeviceName(e.target.value)}
                 />

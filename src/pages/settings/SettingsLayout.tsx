@@ -11,17 +11,17 @@ export default function SettingsLayout() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Configurações</h1>
         <p className="text-muted-foreground mt-1">
-          Gerencie os dispositivos e preferências da sua conta.
+          Gerencie os aparelhos internos e preferências gerais do sistema.
         </p>
       </div>
 
       <Tabs value={currentTab} className="w-full">
         <TabsList>
           <TabsTrigger value="general" asChild>
-            <Link to="/settings/general">Configurações Gerais</Link>
+            <Link to="/settings/general">Perfil / Geral</Link>
           </TabsTrigger>
           <TabsTrigger value="devices" asChild>
-            <Link to="/settings/devices">Dispositivos</Link>
+            <Link to="/settings/devices">Aparelhos Corporativos</Link>
           </TabsTrigger>
         </TabsList>
       </Tabs>

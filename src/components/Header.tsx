@@ -22,7 +22,7 @@ export function Header() {
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Buscar contatos ou anotações..."
+            placeholder="Buscar conversas, tarefas ou anotações..."
             className="w-full rounded-full bg-muted/50 pl-9 border-none focus-visible:ring-1 focus-visible:bg-background"
           />
         </div>
