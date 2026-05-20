@@ -189,7 +189,7 @@ export function ChatWindow({ deviceId, device, onBack, isMobile }: any) {
         ref={scrollRef}
       >
         {messages.map((msg) => {
-          const isMe = msg.sender_id === user?.id
+          const isMe = msg.direction === 'outbound' || msg.sender_id === user?.id
           const timestamp = new Date(msg.created).toLocaleTimeString([], {
             hour: '2-digit',
             minute: '2-digit',
@@ -199,6 +199,11 @@ export function ChatWindow({ deviceId, device, onBack, isMobile }: any) {
               <div
                 className={`max-w-[85%] sm:max-w-[75%] rounded-2xl px-4 py-3 shadow-sm relative group ${isMe ? 'bg-blue-600/80 text-white rounded-br-sm border border-blue-500/30' : 'bg-white/10 text-foreground rounded-bl-sm border border-white/5 backdrop-blur-md'}`}
               >
+                {!isMe && msg.remote_sender && (
+                  <p className="text-[11px] text-muted-foreground mb-1 font-medium">
+                    +{msg.remote_sender}
+                  </p>
+                )}
                 <p className="text-[15px] leading-relaxed break-words whitespace-pre-wrap">
                   {msg.content}
                 </p>

@@ -11,4 +11,5 @@ export const sendMessage = (data: {
   device_id: string
   sender_id: string
   is_read: boolean
-}) => pb.collection('messages').create(data)
+  direction?: string
+}) => pb.collection('messages').create({ ...data, direction: 'outbound' })

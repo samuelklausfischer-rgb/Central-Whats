@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-20T17:01:09.556Z",
+  "generatedAt": "2026-05-20T17:36:26.537Z",
   "collections": [
     {
       "name": "users",
@@ -98,9 +98,17 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "instance_key",
+          "type": "text",
+          "required": false,
+          "system": false
         }
       ],
-      "indexes": []
+      "indexes": [
+        "CREATE UNIQUE INDEX `idx_devices_instance_key` ON `devices` (instance_key) WHERE instance_key != ''"
+      ]
     },
     {
       "name": "messages",
@@ -152,6 +160,19 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "remote_sender",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "direction",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["inbound", "outbound"]
         }
       ],
       "indexes": []
