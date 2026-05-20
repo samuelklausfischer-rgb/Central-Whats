@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer } from 'recharts'
 import {
   Smartphone,
@@ -13,8 +14,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
 import { Button } from '@/components/ui/button'
 import useAppStore from '@/stores/useAppStore'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
+import { getDevices } from '@/services/devices'
+import { useRealtime } from '@/hooks/use-realtime'
 
 const chartData = [
   { date: '14 Mai', mensagens: 120 },
@@ -27,10 +30,23 @@ const chartData = [
 ]
 
 export default function Index() {
-  const { devices, threads, tasks, notes } = useAppStore()
+  const navigate = useNavigate()
+  const { tasks, notes } = useAppStore()
+  const [devices, setDevices] = useState<any[]>([])
+
+  useEffect(() => {
+    getDevices().then(setDevices)
+  }, [])
+
+  useRealtime('devices', (e) => {
+    if (e.action === 'create') setDevices((prev) => [e.record, ...prev])
+    else if (e.action === 'update')
+      setDevices((prev) => prev.map((d) => (d.id === e.record.id ? e.record : d)))
+    else if (e.action === 'delete') setDevices((prev) => prev.filter((d) => d.id !== e.record.id))
+  })
 
   const totalDevices = devices.length
-  const totalUnreadMessages = threads.filter((t) => t.unread).length
+  const totalUnreadMessages = devices.reduce((sum, d) => sum + (d.unread_count || 0), 0)
   const activeTasks = tasks.filter((t) => t.status !== 'concluido').length
   const totalNotes = notes.length
 
@@ -119,19 +135,12 @@ export default function Index() {
         <Card className="md:col-span-4 shadow-sm border-none bg-white dark:bg-card">
           <CardHeader>
             <CardTitle>Comunicação Corporativa</CardTitle>
-            <CardDescription>
-              Tráfego de mensagens nos celulares departamentais nos últimos 7 dias
-            </CardDescription>
+            <CardDescription>Tráfego de mensagens nos celulares departamentais</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-[300px] w-full">
               <ChartContainer
-                config={{
-                  mensagens: {
-                    label: 'Mensagens',
-                    color: 'hsl(var(--primary))',
-                  },
-                }}
+                config={{ mensagens: { label: 'Mensagens', color: 'hsl(var(--primary))' } }}
                 className="h-full w-full"
               >
                 <ResponsiveContainer width="100%" height="100%">
@@ -178,50 +187,46 @@ export default function Index() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {devices.map((device) => {
-                const deviceUnread = threads.filter(
-                  (t) => t.deviceId === device.id && t.unread,
-                ).length
-                return (
-                  <div
-                    key={device.id}
-                    className="flex items-center justify-between p-3 rounded-lg border bg-muted/20"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="bg-primary/10 p-2 rounded-full">
-                        <Smartphone className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-sm leading-none">{device.name}</p>
-                        <p className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
-                          <span>{device.department}</span>
-                          <span className="flex items-center">
-                            {getBatteryIcon(device.battery)}
-                            <span className="ml-0.5">{device.battery}%</span>
-                          </span>
-                        </p>
-                      </div>
+              {devices.map((device) => (
+                <div
+                  key={device.id}
+                  onClick={() => navigate(`/chat?device=${device.id}`)}
+                  className="flex items-center justify-between p-3 rounded-lg border bg-muted/20 hover:bg-muted/40 cursor-pointer transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="bg-primary/10 p-2 rounded-full">
+                      <Smartphone className="h-5 w-5 text-primary" />
                     </div>
-                    <div className="flex flex-col items-end gap-1">
-                      {deviceUnread > 0 ? (
-                        <Badge variant="default" className="bg-amber-500 hover:bg-amber-600">
-                          {deviceUnread} não lidas
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-muted-foreground">
-                          Em dia
-                        </Badge>
-                      )}
-                      <span className="flex items-center gap-1 text-[10px]">
-                        <span
-                          className={`h-1.5 w-1.5 rounded-full ${device.status === 'online' ? 'bg-emerald-500' : 'bg-slate-300'}`}
-                        ></span>
-                        {device.status === 'online' ? 'Online' : 'Offline'}
-                      </span>
+                    <div>
+                      <p className="font-medium text-sm leading-none">{device.name}</p>
+                      <p className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
+                        <span>{device.department}</span>
+                        <span className="flex items-center">
+                          {getBatteryIcon(80)}
+                          <span className="ml-0.5">80%</span>
+                        </span>
+                      </p>
                     </div>
                   </div>
-                )
-              })}
+                  <div className="flex flex-col items-end gap-1">
+                    {device.unread_count > 0 ? (
+                      <Badge variant="default" className="bg-amber-500 hover:bg-amber-600">
+                        {device.unread_count} não lidas
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-muted-foreground">
+                        Em dia
+                      </Badge>
+                    )}
+                    <span className="flex items-center gap-1 text-[10px]">
+                      <span
+                        className={`h-1.5 w-1.5 rounded-full ${device.status === 'online' ? 'bg-emerald-500' : 'bg-slate-300'}`}
+                      ></span>
+                      {device.status === 'online' ? 'Online' : 'Offline'}
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>

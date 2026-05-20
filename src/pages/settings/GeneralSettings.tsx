@@ -1,23 +1,40 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
-import useAppStore from '@/stores/useAppStore'
 import { useToast } from '@/hooks/use-toast'
+import { useAuth } from '@/hooks/use-auth'
+import pb from '@/lib/pocketbase/client'
 
 export default function GeneralSettings() {
-  const { userSignature, setUserSignature } = useAppStore()
-  const [localSignature, setLocalSignature] = useState(userSignature)
+  const { user } = useAuth()
+  const [localSignature, setLocalSignature] = useState('')
   const { toast } = useToast()
 
-  const handleSaveProfile = () => {
-    setUserSignature(localSignature)
-    toast({
-      title: 'Perfil Atualizado',
-      description: 'As configurações do perfil foram salvas com sucesso.',
-    })
+  useEffect(() => {
+    if (user?.signature) {
+      setLocalSignature(user.signature)
+    }
+  }, [user])
+
+  const handleSaveProfile = async () => {
+    if (!user) return
+    try {
+      await pb.collection('users').update(user.id, { signature: localSignature })
+      await pb.collection('users').authRefresh()
+      toast({
+        title: 'Perfil Atualizado',
+        description: 'As configurações do perfil foram salvas com sucesso.',
+      })
+    } catch (e) {
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível salvar o perfil.',
+        variant: 'destructive',
+      })
+    }
   }
 
   return (
