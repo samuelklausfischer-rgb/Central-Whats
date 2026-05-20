@@ -12,7 +12,6 @@ import {
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -36,48 +35,57 @@ export function AppSidebar() {
 
   return (
     <Sidebar>
-      <SidebarHeader className="p-4">
-        <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-            <Smartphone className="h-5 w-5 text-primary-foreground" />
+      <SidebarHeader className="px-4 py-0 border-b border-white/10 h-16 flex flex-col justify-center">
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center shadow-[inset_0_0_10px_rgba(30,64,175,0.4)]">
+            <Smartphone className="h-5 w-5 text-blue-400" />
           </div>
-          <span className="text-lg font-bold tracking-tight text-foreground">CentralCell</span>
+          <span className="text-xl font-display font-bold tracking-tight text-white">
+            CentralCell
+          </span>
         </div>
       </SidebarHeader>
-      <SidebarContent className="px-2 mt-4">
-        <SidebarMenu>
+      <SidebarContent className="px-3 mt-6">
+        <SidebarMenu className="gap-2">
           {navItems.map((item) => (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton
                 asChild
                 isActive={location.pathname === item.url}
                 tooltip={item.title}
+                className="py-5"
               >
-                <Link to={item.url} className="flex items-center gap-3 py-5 transition-all">
+                <Link to={item.url} className="flex items-center gap-3">
                   <item.icon className="h-5 w-5" />
-                  <span className="font-medium">{item.title}</span>
+                  <span className="text-sm">{item.title}</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
 
+          <div className="my-4 mx-2 h-px bg-white/10" />
+
           <Collapsible defaultOpen={isSettingsActive} className="group/collapsible">
             <SidebarMenuItem>
               <CollapsibleTrigger asChild>
-                <SidebarMenuButton tooltip="Configurações" isActive={isSettingsActive}>
+                <SidebarMenuButton
+                  tooltip="Configurações"
+                  isActive={isSettingsActive}
+                  className="py-5"
+                >
                   <Settings className="h-5 w-5" />
-                  <span className="font-medium">Configurações</span>
-                  <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                  <span className="text-sm">Configurações</span>
+                  <ChevronRight className="ml-auto h-4 w-4 text-gray-500 transition-transform group-data-[state=open]/collapsible:rotate-90" />
                 </SidebarMenuButton>
               </CollapsibleTrigger>
-              <CollapsibleContent>
+              <CollapsibleContent className="mt-1">
                 <SidebarMenuSub>
                   <SidebarMenuSubItem>
                     <SidebarMenuSubButton
                       asChild
                       isActive={location.pathname === '/settings/devices'}
                     >
-                      <Link to="/settings/devices">
+                      <Link to="/settings/devices" className="py-4">
                         <Smartphone className="h-4 w-4" />
                         <span>Aparelhos</span>
                       </Link>
@@ -88,7 +96,7 @@ export function AppSidebar() {
                       asChild
                       isActive={location.pathname === '/settings/general'}
                     >
-                      <Link to="/settings/general">
+                      <Link to="/settings/general" className="py-4">
                         <User className="h-4 w-4" />
                         <span>Perfil e Geral</span>
                       </Link>
