@@ -42,7 +42,7 @@ export default function Index() {
         </div>
         <div className="flex gap-3">
           <Button variant="outline" asChild>
-            <Link to="/devices">Gerenciar Aparelhos</Link>
+            <Link to="/settings/devices">Gerenciar Aparelhos</Link>
           </Button>
           <Button asChild>
             <Link to="/chat">Abrir Mensagens</Link>

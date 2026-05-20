@@ -18,10 +18,9 @@ import {
 } from '@/components/ui/sidebar'
 
 const navItems = [
-  { title: 'Dashboard', url: '/', icon: LayoutDashboard },
-  { title: 'Dispositivos', url: '/devices', icon: Smartphone },
-  { title: 'Hub de Mensagens', url: '/chat', icon: MessageSquare },
-  { title: 'CRM Kanban', url: '/crm', icon: KanbanSquare },
+  { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
+  { title: 'Chat', url: '/chat', icon: MessageSquare },
+  { title: 'CRM', url: '/crm', icon: KanbanSquare },
   { title: 'Anotações', url: '/notes', icon: StickyNote },
 ]
 
@@ -59,11 +58,15 @@ export function AppSidebar() {
       <SidebarFooter className="p-4 border-t">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Configurações">
-              <a href="#" className="flex items-center gap-3">
+            <SidebarMenuButton
+              asChild
+              tooltip="Configurações"
+              isActive={location.pathname.startsWith('/settings')}
+            >
+              <Link to="/settings" className="flex items-center gap-3">
                 <Settings className="h-5 w-5 text-muted-foreground" />
                 <span>Configurações</span>
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
