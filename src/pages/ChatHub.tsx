@@ -26,7 +26,7 @@ export default function ChatHub() {
   })
 
   return (
-    <div className="h-full w-full bg-white dark:bg-card flex rounded-none md:rounded-xl border overflow-hidden shadow-sm">
+    <div className="h-full w-full bg-zinc-950/50 backdrop-blur-md border-white/10 flex rounded-none md:rounded-xl border overflow-hidden shadow-sm">
       {(!isMobile || !selectedDeviceId) && (
         <ChatList
           devices={devices}

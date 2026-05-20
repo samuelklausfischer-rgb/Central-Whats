@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Plus, Pin, Calendar, Smartphone, Search } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Plus, StickyNote, Search, Trash2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,46 +13,83 @@ import {
 } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import useAppStore from '@/stores/useAppStore'
 import { useToast } from '@/hooks/use-toast'
+import { useAuth } from '@/hooks/use-auth'
+import { getNotes, createNote, deleteNote, Note } from '@/services/notes'
+import { useRealtime } from '@/hooks/use-realtime'
 
 export default function Notes() {
-  const { notes, addNote } = useAppStore()
   const { toast } = useToast()
+  const { user } = useAuth()
+  const [notes, setNotes] = useState<Note[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [newContent, setNewContent] = useState('')
 
-  const handleCreate = () => {
-    if (!newTitle.trim()) return
-    addNote({ title: newTitle, content: newContent, pinned: false })
-    setIsDialogOpen(false)
-    setNewTitle('')
-    setNewContent('')
-    toast({ title: 'Anotação criada', description: 'Sua anotação foi salva com sucesso.' })
+  const loadNotes = async () => {
+    try {
+      const data = await getNotes()
+      setNotes(data)
+    } catch (error) {
+      // ignore
+    }
   }
 
-  const filteredNotes = notes
-    .filter(
-      (n) =>
-        n.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        n.content.toLowerCase().includes(searchTerm.toLowerCase()),
-    )
-    .sort((a, b) => Number(b.pinned) - Number(a.pinned))
+  useEffect(() => {
+    if (user) loadNotes()
+  }, [user])
+
+  useRealtime('notes', () => {
+    loadNotes()
+  })
+
+  const handleCreate = async () => {
+    if (!newTitle.trim() || !user) return
+    try {
+      await createNote({ title: newTitle, content: newContent, user_id: user.id })
+      setIsDialogOpen(false)
+      setNewTitle('')
+      setNewContent('')
+      toast({ title: 'Anotação criada', description: 'Sua anotação foi salva com sucesso.' })
+    } catch (error) {
+      toast({
+        title: 'Erro',
+        description: 'Falha ao salvar anotação.',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteNote(id)
+      toast({ title: 'Anotação excluída', description: 'A anotação foi removida.' })
+    } catch (error) {
+      toast({ title: 'Erro', description: 'Falha ao excluir.', variant: 'destructive' })
+    }
+  }
+
+  const filteredNotes = notes.filter(
+    (n) =>
+      n.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      n.content.toLowerCase().includes(searchTerm.toLowerCase()),
+  )
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Anotações</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="bg-clip-text text-transparent bg-gradient-to-br from-gray-200 to-gray-600 text-3xl font-bold tracking-tight">
+            Anotações
+          </h1>
+          <p className="text-zinc-400 mt-1">
             Gerencie anotações rápidas e informações importantes.
           </p>
         </div>
         <div className="flex gap-3 w-full sm:w-auto">
           <div className="relative flex-1 sm:w-64">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-zinc-400" />
             <Input
               placeholder="Buscar anotações..."
               className="pl-9"
@@ -66,7 +103,7 @@ export default function Notes() {
                 <Plus className="h-4 w-4" /> Novo Registro
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="bg-zinc-950 border-white/10 text-zinc-100">
               <DialogHeader>
                 <DialogTitle>Criar Registro Interno</DialogTitle>
               </DialogHeader>
@@ -104,27 +141,25 @@ export default function Notes() {
         {filteredNotes.map((note) => (
           <Card
             key={note.id}
-            className={`group relative overflow-hidden transition-all hover:shadow-md ${note.pinned ? 'border-primary/50 bg-primary/5' : ''}`}
+            className="group relative overflow-hidden transition-all hover:-translate-y-1"
           >
-            {note.pinned && (
-              <div className="absolute top-4 right-4">
-                <Pin className="h-4 w-4 text-primary fill-primary" />
-              </div>
-            )}
             <CardHeader className="pb-3 pr-10">
               <CardTitle className="text-lg leading-tight">{note.title}</CardTitle>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute top-4 right-4 h-8 w-8 text-zinc-400 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={() => handleDelete(note.id)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground line-clamp-4 leading-relaxed">
+              <p className="text-sm text-zinc-400 whitespace-pre-wrap leading-relaxed line-clamp-6">
                 {note.content}
               </p>
-              <div className="flex items-center gap-4 text-xs text-muted-foreground pt-2 border-t">
-                <span className="flex items-center gap-1">
-                  <Calendar className="h-3 w-3" /> {note.date}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Smartphone className="h-3 w-3" /> Geral
-                </span>
+              <div className="text-[10px] text-zinc-500 pt-2 border-t border-white/5">
+                {new Date(note.created).toLocaleDateString('pt-BR')}
               </div>
             </CardContent>
           </Card>
@@ -132,7 +167,7 @@ export default function Notes() {
       </div>
 
       {filteredNotes.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-20 text-muted-foreground bg-white dark:bg-card border border-dashed rounded-xl">
+        <div className="flex flex-col items-center justify-center py-20 text-zinc-500 border border-white/10 border-dashed rounded-xl bg-zinc-950/30 backdrop-blur-sm">
           <StickyNote className="h-12 w-12 mb-4 opacity-20" />
           <p>Nenhuma anotação encontrada.</p>
         </div>

@@ -75,7 +75,7 @@ export default function Devices() {
               </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col items-center justify-center py-6 gap-6">
-              <div className="bg-white p-4 rounded-lg shadow-sm border">
+              <div className="bg-zinc-100 p-4 rounded-lg shadow-sm border border-white/10">
                 <QrCode className="h-48 w-48 text-slate-800" />
               </div>
               <div className="w-full space-y-2">
@@ -144,14 +144,14 @@ export default function Devices() {
                   {device.status === 'online' ? (
                     <Badge
                       variant="outline"
-                      className="border-emerald-200 bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:border-emerald-800"
+                      className="border-white/10 bg-emerald-950/30 text-emerald-400"
                     >
                       <Wifi className="h-3 w-3 mr-1" /> Online
                     </Badge>
                   ) : (
                     <Badge
                       variant="outline"
-                      className="border-slate-200 bg-slate-50 text-slate-500 dark:bg-slate-900 dark:border-slate-800"
+                      className="border-white/10 bg-slate-950/30 text-slate-400"
                     >
                       <WifiOff className="h-3 w-3 mr-1" /> Offline
                     </Badge>
@@ -165,7 +165,7 @@ export default function Devices() {
                 </div>
               </div>
             </CardContent>
-            <CardFooter className="bg-muted/30 py-3 border-t">
+            <CardFooter className="bg-black/20 py-3 border-t border-white/10">
               <Button
                 variant="ghost"
                 className="w-full text-xs h-8 text-primary hover:text-primary/80"
