@@ -54,6 +54,8 @@ interface AppContextType {
   updateTaskStatus: (taskId: string, status: Task['status']) => void
   syncDevice: (name: string, department: string) => void
   markThreadRead: (threadId: string) => void
+  userSignature: string
+  setUserSignature: (signature: string) => void
 }
 
 const AppContext = createContext<AppContextType | null>(null)
@@ -199,6 +201,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [threads, setThreads] = useState<ChatThread[]>(initialThreads)
   const [tasks, setTasks] = useState<Task[]>(initialTasks)
   const [notes, setNotes] = useState<Note[]>(initialNotes)
+  const [userSignature, setUserSignature] = useState('')
 
   const addMessage = (threadId: string, text: string) => {
     setThreads((prev) =>
@@ -271,12 +274,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         threads,
         tasks,
         notes,
+        userSignature,
         addMessage,
         addNote,
         addTask,
         updateTaskStatus,
         syncDevice,
         markThreadRead,
+        setUserSignature,
       },
     },
     children,

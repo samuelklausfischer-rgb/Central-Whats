@@ -1,10 +1,25 @@
+import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
+import useAppStore from '@/stores/useAppStore'
+import { useToast } from '@/hooks/use-toast'
 
 export default function GeneralSettings() {
+  const { userSignature, setUserSignature } = useAppStore()
+  const [localSignature, setLocalSignature] = useState(userSignature)
+  const { toast } = useToast()
+
+  const handleSaveProfile = () => {
+    setUserSignature(localSignature)
+    toast({
+      title: 'Perfil Atualizado',
+      description: 'As configurações do perfil foram salvas com sucesso.',
+    })
+  }
+
   return (
     <div className="grid gap-6">
       <Card>
@@ -23,7 +38,19 @@ export default function GeneralSettings() {
             <Label htmlFor="supportEmail">E-mail de Suporte</Label>
             <Input id="supportEmail" defaultValue="suporte@centralcell.corp" type="email" />
           </div>
-          <Button>Salvar Alterações</Button>
+          <div className="space-y-2">
+            <Label htmlFor="userSignature">Assinatura de Mensagem / Apresentação</Label>
+            <Input
+              id="userSignature"
+              placeholder="Ex: Maria - PRN Camboriú"
+              value={localSignature}
+              onChange={(e) => setLocalSignature(e.target.value)}
+            />
+            <p className="text-sm text-muted-foreground">
+              Esta assinatura será incluída automaticamente no início de todas as suas mensagens.
+            </p>
+          </div>
+          <Button onClick={handleSaveProfile}>Salvar Alterações</Button>
         </CardContent>
       </Card>
 

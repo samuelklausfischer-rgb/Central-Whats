@@ -8,6 +8,7 @@ import {
   StickyNote,
   ListTodo,
   MessageSquare,
+  Info,
 } from 'lucide-react'
 import { ChatThread } from '@/stores/useAppStore'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -25,7 +26,7 @@ interface Props {
 
 export function ChatWindow({ thread, onBack, isMobile }: Props) {
   const [msgText, setMsgText] = useState('')
-  const { addMessage, addTask, markThreadRead } = useAppStore()
+  const { addMessage, addTask, markThreadRead, userSignature } = useAppStore()
   const { toast } = useToast()
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -41,7 +42,10 @@ export function ChatWindow({ thread, onBack, isMobile }: Props) {
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault()
     if (!msgText.trim() || !thread) return
-    addMessage(thread.id, msgText)
+
+    const finalMessage = userSignature ? `*${userSignature}*\n${msgText}` : msgText
+
+    addMessage(thread.id, finalMessage)
     setMsgText('')
   }
 
@@ -159,7 +163,9 @@ export function ChatWindow({ thread, onBack, isMobile }: Props) {
                     : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-tl-none border-transparent'
                 }`}
               >
-                <p className="text-[14.5px] leading-relaxed break-words mr-10">{msg.text}</p>
+                <p className="text-[14.5px] leading-relaxed break-words mr-10 whitespace-pre-wrap">
+                  {msg.text}
+                </p>
                 <span className="text-[11px] text-slate-500 dark:text-slate-400 absolute bottom-1 right-2">
                   {msg.timestamp}
                 </span>
@@ -170,39 +176,50 @@ export function ChatWindow({ thread, onBack, isMobile }: Props) {
       </div>
 
       {/* Input Area */}
-      <div className="px-4 py-3 bg-[#f0f2f5] dark:bg-slate-900 border-t">
-        <form onSubmit={handleSend} className="flex items-center gap-3">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="text-slate-500 hover:text-slate-600 dark:text-slate-400 flex-shrink-0"
-          >
-            <Smile className="h-6 w-6" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="text-slate-500 hover:text-slate-600 dark:text-slate-400 flex-shrink-0"
-          >
-            <Paperclip className="h-5 w-5" />
-          </Button>
-          <Input
-            className="flex-1 bg-white dark:bg-slate-800 border-none h-11 rounded-lg px-4 text-[15px] focus-visible:ring-0 shadow-sm"
-            placeholder="Digite uma mensagem"
-            value={msgText}
-            onChange={(e) => setMsgText(e.target.value)}
-          />
-          <Button
-            type="submit"
-            size="icon"
-            variant="ghost"
-            className="rounded-full flex-shrink-0 h-11 w-11 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800"
-          >
-            <Send className="h-6 w-6 ml-1" />
-          </Button>
-        </form>
+      <div className="flex flex-col bg-[#f0f2f5] dark:bg-slate-900 border-t">
+        {userSignature && (
+          <div className="px-4 py-2 text-xs text-slate-500 dark:text-slate-400 bg-slate-200/50 dark:bg-slate-800/50 border-b flex items-center gap-2">
+            <Info className="h-3.5 w-3.5" />
+            <span>
+              Mensagem será enviada como:{' '}
+              <span className="font-semibold italic">*{userSignature}*</span> ...
+            </span>
+          </div>
+        )}
+        <div className="px-4 py-3">
+          <form onSubmit={handleSend} className="flex items-center gap-3">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="text-slate-500 hover:text-slate-600 dark:text-slate-400 flex-shrink-0"
+            >
+              <Smile className="h-6 w-6" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="text-slate-500 hover:text-slate-600 dark:text-slate-400 flex-shrink-0"
+            >
+              <Paperclip className="h-5 w-5" />
+            </Button>
+            <Input
+              className="flex-1 bg-white dark:bg-slate-800 border-none h-11 rounded-lg px-4 text-[15px] focus-visible:ring-0 shadow-sm"
+              placeholder="Digite uma mensagem"
+              value={msgText}
+              onChange={(e) => setMsgText(e.target.value)}
+            />
+            <Button
+              type="submit"
+              size="icon"
+              variant="ghost"
+              className="rounded-full flex-shrink-0 h-11 w-11 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800"
+            >
+              <Send className="h-6 w-6 ml-1" />
+            </Button>
+          </form>
+        </div>
       </div>
     </div>
   )
