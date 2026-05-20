@@ -3,6 +3,7 @@ import { useAuth } from '@/hooks/use-auth'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { GridBackground } from '@/components/ui/grid-background'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -17,16 +18,17 @@ export default function Login() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-muted/20">
+    <div className="relative flex items-center justify-center min-h-screen overflow-hidden">
+      <GridBackground />
       <form
         onSubmit={handleLogin}
-        className="p-8 bg-card rounded-xl shadow-sm border space-y-6 w-[400px]"
+        className="relative z-10 p-8 bg-black/40 backdrop-blur-xl rounded-xl shadow-2xl border border-white/10 space-y-6 w-[400px]"
       >
         <div className="text-center space-y-2">
-          <h1 className="text-2xl font-bold tracking-tight">CentralCell</h1>
-          <p className="text-sm text-muted-foreground">
-            Faça login com suas credenciais corporativas.
-          </p>
+          <h1 className="text-4xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-gray-200 to-gray-600">
+            CentralCell
+          </h1>
+          <p className="text-sm text-gray-400">Faça login com suas credenciais corporativas.</p>
         </div>
         <div className="space-y-4">
           <Input

@@ -2,6 +2,7 @@ import { Outlet, useLocation } from 'react-router-dom'
 import { SidebarProvider } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/AppSidebar'
 import { Header } from '@/components/Header'
+import { GridBackground } from '@/components/ui/grid-background'
 
 export default function Layout() {
   const location = useLocation()
@@ -9,9 +10,10 @@ export default function Layout() {
 
   return (
     <SidebarProvider>
-      <div className="flex h-screen w-full bg-muted/20 overflow-hidden">
+      <div className="relative flex h-screen w-full overflow-hidden text-foreground">
+        <GridBackground />
         <AppSidebar />
-        <div className="flex flex-col w-full flex-1 overflow-hidden transition-all duration-300 ease-in-out">
+        <div className="relative z-10 flex flex-col w-full flex-1 overflow-hidden transition-all duration-300 ease-in-out bg-black/20 backdrop-blur-sm">
           <Header />
           <main
             className={`flex-1 overflow-hidden animate-fade-in-up flex flex-col ${isChat ? '' : 'p-4 md:p-6 lg:p-8'}`}

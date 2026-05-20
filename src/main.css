@@ -6,44 +6,6 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
-    --foreground: 222.2 47% 11%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 47% 11%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 47% 11%;
-    --primary: 239 84% 67%; /* Indigo */
-    --primary-foreground: 210 40% 98%;
-    --secondary: 214 32% 91%;
-    --secondary-foreground: 222.2 47% 11%;
-    --muted: 214 32% 91%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 214 32% 91%;
-    --accent-foreground: 222.2 47% 11%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 239 84% 67%;
-    --radius: 0.75rem;
-
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 222.2 47% 11%;
-    --sidebar-primary: 239 84% 67%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 214 32% 91%;
-    --sidebar-accent-foreground: 222.2 47% 11%;
-    --sidebar-border: 214.3 31.8% 91.4%;
-    --sidebar-ring: 239 84% 67%;
-
-    --chart-1: 239 84% 67%;
-    --chart-2: 160 84% 39%;
-    --chart-3: 38 92% 50%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-  }
-
-  .dark {
     --background: 222 47% 5%;
     --foreground: 210 40% 98%;
     --card: 222 47% 8%;
@@ -63,6 +25,7 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 239 84% 67%;
+    --radius: 0.75rem;
 
     --sidebar-background: 222 47% 5%;
     --sidebar-foreground: 210 40% 98%;
