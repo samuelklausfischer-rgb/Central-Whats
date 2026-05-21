@@ -12,4 +12,5 @@ export const sendMessage = (data: {
   sender_id: string
   is_read: boolean
   direction?: string
+  remote_sender?: string
 }) => pb.collection('messages').create({ ...data, direction: 'outbound' })

@@ -9,77 +9,71 @@ import {
   ListTodo,
   MessageSquare,
   Info,
+  User,
 } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { useAuth } from '@/hooks/use-auth'
-import { useRealtime } from '@/hooks/use-realtime'
-import { getMessages, sendMessage } from '@/services/messages'
+import { sendMessage } from '@/services/messages'
 import pb from '@/lib/pocketbase/client'
 import useAppStore from '@/stores/useAppStore'
 import { useToast } from '@/hooks/use-toast'
 
-export function ChatWindow({ deviceId, device, onBack, isMobile }: any) {
+export function ChatWindow({ device, contact, conversation, onBack, isMobile }: any) {
   const { user } = useAuth()
   const { addTask } = useAppStore()
   const { toast } = useToast()
 
-  const [messages, setMessages] = useState<any[]>([])
   const [msgText, setMsgText] = useState('')
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  const loadMessages = async () => {
-    if (!deviceId) return
-    const msgs = await getMessages(deviceId)
-    setMessages(msgs)
-    if (device?.unread_count > 0) {
-      await pb.collection('devices').update(deviceId, { unread_count: 0 })
-    }
-  }
-
-  useEffect(() => {
-    loadMessages()
-  }, [deviceId])
-
-  useRealtime('messages', (e) => {
-    if (e.record.device_id === deviceId) {
-      if (e.action === 'create') setMessages((prev) => [...prev, e.record])
-    }
-  })
+  const messages = conversation?.messages || []
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
   }, [messages])
 
+  useEffect(() => {
+    if (conversation && conversation.unread_count > 0 && device) {
+      const unreadMsgs = messages.filter((m: any) => !m.is_read && m.direction === 'inbound')
+      unreadMsgs.forEach((m: any) => {
+        pb.collection('messages')
+          .update(m.id, { is_read: true })
+          .catch(() => {})
+      })
+    }
+  }, [contact, conversation?.unread_count, device])
+
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!msgText.trim() || !deviceId || !user) return
+    if (!msgText.trim() || !device || !user || !contact) return
 
     const signature = user.signature ? `*${user.signature}*\n` : ''
     const content = signature + msgText
 
     await sendMessage({
       content,
-      device_id: deviceId,
+      device_id: device.id,
       sender_id: user.id,
       is_read: true,
+      remote_sender: contact,
     })
     setMsgText('')
   }
 
   const handleAddTask = () => {
-    if (!device) return
+    if (!device || !contact) return
     addTask({
-      title: `Acompanhamento: ${device.name}`,
+      title: `Acompanhamento: +${contact}`,
       status: 'pendente',
       deviceId: device.id,
-      description: 'Tarefa criada via ChatHub.',
+      description: `Tarefa criada via ChatHub para o contato +${contact}.`,
     })
     toast({ title: 'Tarefa Criada' })
   }
 
-  if (!deviceId || !device) {
+  if (!device || !contact) {
     return (
       <div className="hidden md:flex flex-col items-center justify-center h-full bg-background/10 backdrop-blur-sm flex-1">
         <div className="max-w-md text-center p-8 rounded-3xl bg-black/20 border border-white/5 shadow-2xl backdrop-blur-xl">
@@ -88,8 +82,9 @@ export function ChatWindow({ deviceId, device, onBack, isMobile }: any) {
           </div>
           <h2 className="text-2xl font-semibold text-foreground tracking-tight">CentralCell Web</h2>
           <p className="text-muted-foreground mt-3 text-[15px] leading-relaxed">
-            Select a device to start chatting. Manage communications efficiently in a professional
-            environment.
+            {device
+              ? 'Selecione uma conversa para começar a enviar mensagens.'
+              : 'Selecione uma instância e uma conversa para começar.'}
           </p>
         </div>
       </div>
@@ -97,72 +92,58 @@ export function ChatWindow({ deviceId, device, onBack, isMobile }: any) {
   }
 
   return (
-    <div className="flex flex-col h-full bg-transparent flex-1 relative">
-      {/* Header */}
+    <div className="flex flex-col h-full bg-transparent flex-1 relative min-w-0">
       <div className="h-[72px] border-b border-white/10 bg-black/20 backdrop-blur-xl flex items-center justify-between px-6 sticky top-0 z-10 flex-shrink-0">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 min-w-0">
           {isMobile && (
             <Button
               variant="ghost"
               size="icon"
               onClick={onBack}
-              className="-ml-2 mr-1 text-foreground/80 hover:text-foreground"
+              className="-ml-2 mr-1 text-foreground/80 hover:text-foreground flex-shrink-0"
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
           )}
-          <div className="relative">
-            <Avatar className="h-11 w-11 border border-white/10 shadow-sm">
-              <AvatarFallback className="bg-black/40 text-foreground">
-                {device.name.substring(0, 2).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div
-              className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-zinc-950 ${device.status === 'online' ? 'bg-emerald-500' : 'bg-zinc-500'}`}
-            />
-          </div>
-          <div>
-            <h3 className="font-semibold text-[16px] text-foreground tracking-tight">
-              {device.name}
+          <Avatar className="h-11 w-11 border border-white/10 shadow-sm flex-shrink-0">
+            <AvatarFallback className="bg-black/40 text-foreground">
+              <User className="h-5 w-5 opacity-50" />
+            </AvatarFallback>
+          </Avatar>
+          <div className="min-w-0">
+            <h3 className="font-semibold text-[16px] text-foreground tracking-tight truncate">
+              +{contact}
             </h3>
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-xs text-muted-foreground font-medium">{device.department}</span>
-              <span className="w-1 h-1 rounded-full bg-white/20"></span>
-              <span
-                className={`text-[11px] font-medium tracking-wide ${device.status === 'online' ? 'text-emerald-400' : 'text-zinc-400'}`}
-              >
-                {device.status === 'online' ? 'Online' : 'Offline'}
+            <div className="flex items-center gap-2 mt-0.5 truncate">
+              <span className="text-xs text-muted-foreground font-medium truncate">
+                Via {device.name}
               </span>
             </div>
           </div>
         </div>
+
         <Sheet>
           <SheetTrigger asChild>
             <Button
               variant="ghost"
               size="icon"
-              className="rounded-full text-foreground/80 hover:text-foreground hover:bg-white/10"
+              className="rounded-full text-foreground/80 hover:text-foreground hover:bg-white/10 flex-shrink-0 ml-2"
             >
               <MoreVertical className="h-5 w-5" />
             </Button>
           </SheetTrigger>
           <SheetContent className="bg-zinc-950/95 border-white/10 backdrop-blur-xl">
             <SheetHeader>
-              <SheetTitle className="text-foreground">Info do Dispositivo</SheetTitle>
+              <SheetTitle className="text-foreground">Info do Contato</SheetTitle>
             </SheetHeader>
             <div className="py-8 flex flex-col items-center border-b border-white/10">
               <Avatar className="h-32 w-32 mb-5 border border-white/10 shadow-2xl">
                 <AvatarFallback className="text-3xl bg-black/40 text-foreground">
-                  {device.name.substring(0, 2).toUpperCase()}
+                  <User className="h-12 w-12 opacity-50" />
                 </AvatarFallback>
               </Avatar>
-              <h3 className="font-bold text-xl text-foreground tracking-tight">{device.name}</h3>
-              <p className="text-muted-foreground mt-1">{device.department}</p>
-              <div
-                className={`mt-4 px-4 py-1.5 rounded-full text-[13px] font-medium border ${device.status === 'online' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20'}`}
-              >
-                {device.status === 'online' ? 'Status: Online' : 'Status: Offline'}
-              </div>
+              <h3 className="font-bold text-xl text-foreground tracking-tight">+{contact}</h3>
+              <p className="text-muted-foreground mt-1 text-sm">Via {device.name}</p>
             </div>
             <div className="py-6 space-y-3">
               <Button
@@ -170,7 +151,7 @@ export function ChatWindow({ deviceId, device, onBack, isMobile }: any) {
                 variant="outline"
                 onClick={handleAddTask}
               >
-                <ListTodo className="mr-3 h-5 w-5 text-blue-400" /> Criar Tarefa
+                <ListTodo className="mr-3 h-5 w-5 text-blue-400" /> Criar Tarefa para Contato
               </Button>
               <Button
                 className="w-full justify-start h-12 bg-white/5 hover:bg-white/10 border-white/5 text-foreground transition-all"
@@ -183,12 +164,11 @@ export function ChatWindow({ deviceId, device, onBack, isMobile }: any) {
         </Sheet>
       </div>
 
-      {/* Messages */}
       <div
         className="flex-1 overflow-y-auto p-6 space-y-5 bg-black/10 backdrop-blur-sm"
         ref={scrollRef}
       >
-        {messages.map((msg) => {
+        {messages.map((msg: any) => {
           const isMe = msg.direction === 'outbound' || msg.sender_id === user?.id
           const timestamp = new Date(msg.created).toLocaleTimeString([], {
             hour: '2-digit',
@@ -197,18 +177,19 @@ export function ChatWindow({ deviceId, device, onBack, isMobile }: any) {
           return (
             <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
               <div
-                className={`max-w-[85%] sm:max-w-[75%] rounded-2xl px-4 py-3 shadow-sm relative group ${isMe ? 'bg-blue-600/80 text-white rounded-br-sm border border-blue-500/30' : 'bg-white/10 text-foreground rounded-bl-sm border border-white/5 backdrop-blur-md'}`}
+                className={`max-w-[85%] sm:max-w-[75%] rounded-2xl px-4 py-3 shadow-sm relative group ${
+                  isMe
+                    ? 'bg-blue-600/80 text-white rounded-br-sm border border-blue-500/30'
+                    : 'bg-white/10 text-foreground rounded-bl-sm border border-white/5 backdrop-blur-md'
+                }`}
               >
-                {!isMe && msg.remote_sender && (
-                  <p className="text-[11px] text-muted-foreground mb-1 font-medium">
-                    +{msg.remote_sender}
-                  </p>
-                )}
                 <p className="text-[15px] leading-relaxed break-words whitespace-pre-wrap">
                   {msg.content}
                 </p>
                 <div
-                  className={`text-[10px] mt-1.5 font-medium flex items-center justify-end ${isMe ? 'text-blue-100/70' : 'text-muted-foreground'}`}
+                  className={`text-[10px] mt-1.5 font-medium flex items-center justify-end ${
+                    isMe ? 'text-blue-100/70' : 'text-muted-foreground'
+                  }`}
                 >
                   {timestamp}
                 </div>
@@ -218,7 +199,6 @@ export function ChatWindow({ deviceId, device, onBack, isMobile }: any) {
         })}
       </div>
 
-      {/* Input */}
       <div className="flex flex-col bg-black/20 backdrop-blur-xl border-t border-white/10 flex-shrink-0 p-4">
         {user?.signature && (
           <div className="px-2 pb-3 text-[13px] text-muted-foreground flex items-center gap-1.5">
