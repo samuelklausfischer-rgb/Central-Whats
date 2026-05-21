@@ -19,6 +19,9 @@ import {
   Download,
   Image as ImageIcon,
   Pencil,
+  Wand2,
+  Sparkles,
+  Loader2,
 } from 'lucide-react'
 import {
   Dialog,
@@ -28,6 +31,14 @@ import {
   DialogFooter,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { createScheduledMessage } from '@/services/scheduled_messages'
@@ -229,6 +240,12 @@ export function ChatWindow({ device, contact, conversation, contacts, onBack, is
   const [attachments, setAttachments] = useState<File[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const [isAiLoading, setIsAiLoading] = useState(false)
+  const [aiModalOpen, setAiModalOpen] = useState(false)
+  const [aiResult, setAiResult] = useState('')
+  const [aiActionSelected, setAiActionSelected] = useState('')
+  const [aiOriginalText, setAiOriginalText] = useState('')
+
   const messages = conversation?.messages || []
 
   useEffect(() => {
@@ -362,6 +379,47 @@ export function ChatWindow({ device, contact, conversation, contacts, onBack, is
 
   const removeAttachment = (index: number) => {
     setAttachments((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  const handleAiAction = async (action: string, overrideText?: string) => {
+    const textToUse = overrideText !== undefined ? overrideText : msgText.trim()
+
+    if (!textToUse && action !== 'suggest_reply') {
+      toast({ title: 'Por favor, digite uma mensagem primeiro.', variant: 'destructive' })
+      return
+    }
+
+    setAiActionSelected(action)
+    if (overrideText === undefined) {
+      setAiOriginalText(textToUse)
+    }
+
+    setIsAiLoading(true)
+    try {
+      const context = messages.slice(-10).map((m: any) => ({
+        role: m.direction === 'outbound' || m.sender_id === user?.id ? 'assistant' : 'user',
+        text: m.content,
+      }))
+
+      const res = await pb.send('/backend/v1/ai/message-assist', {
+        method: 'POST',
+        body: JSON.stringify({
+          action,
+          text: textToUse,
+          conversationContext: context,
+        }),
+      })
+
+      setAiResult(res.result)
+      setAiModalOpen(true)
+    } catch (err) {
+      toast({
+        title: 'Não foi possível melhorar o texto agora. Tente novamente.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsAiLoading(false)
+    }
   }
 
   const handleAddTask = () => {
@@ -857,6 +915,86 @@ export function ChatWindow({ device, contact, conversation, contacts, onBack, is
                 }}
                 rows={1}
               />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    disabled={isAiLoading}
+                    className="text-muted-foreground hover:text-blue-400 hover:bg-transparent h-[48px] w-[48px] flex-shrink-0 transition-all duration-300 hover:scale-110 active:scale-95"
+                  >
+                    {isAiLoading ? (
+                      <Loader2 className="h-5 w-5 animate-spin text-blue-400" />
+                    ) : (
+                      <Wand2 className="h-5 w-5" />
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="w-56 bg-zinc-950 border-white/10 backdrop-blur-xl"
+                >
+                  <DropdownMenuLabel className="text-xs text-muted-foreground font-semibold">
+                    Assistente IA
+                  </DropdownMenuLabel>
+                  <DropdownMenuItem
+                    onClick={() => handleAiAction('suggest_reply')}
+                    className="cursor-pointer focus:bg-white/10"
+                  >
+                    Sugerir resposta
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-white/10" />
+                  <DropdownMenuItem
+                    onClick={() => handleAiAction('formalize')}
+                    className="cursor-pointer focus:bg-white/10"
+                  >
+                    Formalizar texto
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleAiAction('correct_spelling')}
+                    className="cursor-pointer focus:bg-white/10"
+                  >
+                    Corrigir ortografia
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleAiAction('improve_clarity')}
+                    className="cursor-pointer focus:bg-white/10"
+                  >
+                    Melhorar clareza
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleAiAction('make_shorter')}
+                    className="cursor-pointer focus:bg-white/10"
+                  >
+                    Mais objetivo
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleAiAction('make_kind')}
+                    className="cursor-pointer focus:bg-white/10"
+                  >
+                    Mais cordial
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleAiAction('professional_reply')}
+                    className="cursor-pointer focus:bg-white/10"
+                  >
+                    Resposta profissional
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleAiAction('expand')}
+                    className="cursor-pointer focus:bg-white/10"
+                  >
+                    Expandir
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleAiAction('summarize')}
+                    className="cursor-pointer focus:bg-white/10"
+                  >
+                    Resumir
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button
                 type="button"
                 variant="ghost"
@@ -984,6 +1122,51 @@ export function ChatWindow({ device, contact, conversation, contacts, onBack, is
               <Send className="h-5 w-5 ml-0.5" />
             </Button>
           </div>
+
+          <Dialog open={aiModalOpen} onOpenChange={setAiModalOpen}>
+            <DialogContent className="sm:max-w-[500px] bg-zinc-950 border-white/10">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-blue-400" /> Sugestão da IA
+                </DialogTitle>
+              </DialogHeader>
+              <div className="py-4">
+                <div className="p-4 bg-black/40 border border-white/10 rounded-xl text-sm leading-relaxed text-foreground min-h-[100px] max-h-[300px] overflow-y-auto whitespace-pre-wrap">
+                  {aiResult}
+                </div>
+              </div>
+              <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setAiModalOpen(false)}
+                  className="bg-transparent border-white/10 hover:bg-white/5 sm:mr-auto"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => handleAiAction(aiActionSelected, aiOriginalText)}
+                  disabled={isAiLoading}
+                  className="bg-white/10 hover:bg-white/20 text-foreground"
+                >
+                  {isAiLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                  Tentar novamente
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setMsgText(aiResult)
+                    setAiModalOpen(false)
+                  }}
+                  className="bg-blue-600 hover:bg-blue-500 text-white"
+                >
+                  Usar mensagem
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </form>
       </div>
     </div>
