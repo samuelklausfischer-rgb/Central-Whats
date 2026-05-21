@@ -30,6 +30,7 @@ import {
 import { Label } from '@/components/ui/label'
 import { createScheduledMessage } from '@/services/scheduled_messages'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { SmartAvatar } from '@/components/chat/SmartAvatar'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -202,7 +203,7 @@ const renderMessage = (content: string, isMe: boolean) => {
   })
 }
 
-export function ChatWindow({ device, contact, conversation, onBack, isMobile }: any) {
+export function ChatWindow({ device, contact, conversation, contacts, onBack, isMobile }: any) {
   const { user } = useAuth()
   const { addTask } = useAppStore()
   const { toast } = useToast()
@@ -426,11 +427,14 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
               <ArrowLeft className="h-5 w-5" />
             </Button>
           )}
-          <Avatar className="h-11 w-11 border border-white/10 shadow-lg flex-shrink-0 transition-transform duration-300 hover:scale-105">
-            <AvatarFallback className="bg-black/40 text-foreground">
-              <User className="h-5 w-5 opacity-50" />
-            </AvatarFallback>
-          </Avatar>
+          <SmartAvatar
+            jid={contact}
+            name={conversation?.sender_name}
+            instanceKey={device?.instance_key}
+            contactRecord={contacts?.find((c: any) => c.remote_jid === contact)}
+            className="h-11 w-11 border border-white/10 shadow-lg flex-shrink-0 transition-transform duration-300 hover:scale-105"
+            fallbackClassName="bg-black/40 text-foreground"
+          />
           <div className="min-w-0">
             <h3 className="font-semibold text-[16px] text-foreground tracking-tight truncate flex items-center gap-2">
               {conversation?.sender_name
@@ -510,17 +514,14 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
                 <SheetTitle className="text-foreground">Info do Contato</SheetTitle>
               </SheetHeader>
               <div className="py-8 flex flex-col items-center border-b border-white/10">
-                <Avatar className="h-32 w-32 mb-5 border border-white/10 shadow-2xl">
-                  <AvatarFallback className="text-3xl bg-black/40 text-foreground">
-                    {conversation?.sender_name ? (
-                      <span className="text-4xl">
-                        {conversation.sender_name.substring(0, 2).toUpperCase()}
-                      </span>
-                    ) : (
-                      <User className="h-12 w-12 opacity-50" />
-                    )}
-                  </AvatarFallback>
-                </Avatar>
+                <SmartAvatar
+                  jid={contact}
+                  name={conversation?.sender_name}
+                  instanceKey={device?.instance_key}
+                  contactRecord={contacts?.find((c: any) => c.remote_jid === contact)}
+                  className="h-32 w-32 mb-5 border border-white/10 shadow-2xl text-4xl"
+                  fallbackClassName="text-3xl bg-black/40 text-foreground"
+                />
                 <h3 className="font-bold text-xl text-foreground tracking-tight text-center">
                   {conversation?.sender_name
                     ? conversation.sender_name
@@ -589,75 +590,103 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
               className={`flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-300 ${isMe ? 'items-end' : 'items-start'}`}
             >
               <div
-                className={`max-w-[85%] sm:max-w-[75%] rounded-2xl px-4 py-3 shadow-md relative group transition-all duration-300 ${
-                  isMe
-                    ? 'bg-primary text-primary-foreground rounded-br-sm shadow-blue-900/20'
-                    : 'bg-secondary text-secondary-foreground rounded-bl-sm shadow-black/40'
-                }`}
+                className={`flex gap-2.5 items-end w-full ${isMe ? 'justify-end' : 'justify-start'}`}
               >
-                <div className="text-xs font-bold mb-1.5 opacity-90 flex items-center justify-between">
-                  {isMe ? (
-                    <span className="text-primary-foreground/80">{user?.name || 'Você'}</span>
-                  ) : (
-                    <span className="text-secondary-foreground/80">
-                      {msg.sender_name
-                        ? msg.sender_name
-                        : msg.remote_sender
-                          ? `+${msg.remote_sender}`
-                          : 'Unknown Sender'}
-                    </span>
-                  )}
-                </div>
-                {msg.attachments && msg.attachments.length > 0 && (
-                  <div className="flex flex-col gap-2 mb-2">
-                    {msg.attachments.map((filename: string, idx: number) => {
-                      const url = `${import.meta.env.VITE_POCKETBASE_URL}/api/files/${msg.collectionId}/${msg.id}/${filename}`
-                      const isImage = /\.(jpeg|jpg|gif|png|webp)$/i.test(filename)
-                      if (isImage) {
+                {!isMe && (
+                  <SmartAvatar
+                    jid={msg.remote_sender}
+                    name={msg.sender_name}
+                    instanceKey={device?.instance_key}
+                    contactRecord={contacts?.find((c: any) => c.remote_jid === msg.remote_sender)}
+                    className="h-7 w-7 border border-white/10 shadow-sm flex-shrink-0 mb-1 hidden sm:block"
+                    fallbackClassName="bg-black/20 text-xs"
+                  />
+                )}
+                <div
+                  className={`max-w-[85%] sm:max-w-[75%] rounded-2xl px-4 py-3 shadow-md relative group transition-all duration-300 ${
+                    isMe
+                      ? 'bg-primary text-primary-foreground rounded-br-sm shadow-blue-900/20'
+                      : 'bg-secondary text-secondary-foreground rounded-bl-sm shadow-black/40'
+                  }`}
+                >
+                  <div className="text-xs font-bold mb-1.5 opacity-90 flex items-center justify-between">
+                    {isMe ? (
+                      <span className="text-primary-foreground/80">{user?.name || 'Você'}</span>
+                    ) : (
+                      <span className="text-secondary-foreground/80">
+                        {msg.sender_name
+                          ? msg.sender_name
+                          : msg.remote_sender
+                            ? `+${msg.remote_sender}`
+                            : 'Unknown Sender'}
+                      </span>
+                    )}
+                  </div>
+                  {msg.attachments && msg.attachments.length > 0 && (
+                    <div className="flex flex-col gap-2 mb-2">
+                      {msg.attachments.map((filename: string, idx: number) => {
+                        const url = `${import.meta.env.VITE_POCKETBASE_URL}/api/files/${msg.collectionId}/${msg.id}/${filename}`
+                        const isImage = /\.(jpeg|jpg|gif|png|webp)$/i.test(filename)
+                        if (isImage) {
+                          return (
+                            <a
+                              key={idx}
+                              href={url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="block max-w-[240px] overflow-hidden rounded-xl border border-white/10 hover:opacity-90 hover:scale-[1.02] transition-all duration-300 shadow-sm"
+                            >
+                              <img
+                                src={url}
+                                alt={filename}
+                                className="w-full h-auto object-cover"
+                              />
+                            </a>
+                          )
+                        }
                         return (
                           <a
                             key={idx}
                             href={url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="block max-w-[240px] overflow-hidden rounded-xl border border-white/10 hover:opacity-90 hover:scale-[1.02] transition-all duration-300 shadow-sm"
+                            className={`flex items-center gap-2 p-2.5 rounded-md hover:opacity-80 transition-colors text-sm border ${isMe ? 'border-primary-foreground/20 bg-primary-foreground/10' : 'border-secondary-foreground/20 bg-secondary-foreground/10'}`}
                           >
-                            <img src={url} alt={filename} className="w-full h-auto object-cover" />
+                            <FileIcon
+                              className={`h-4 w-4 flex-shrink-0 ${isMe ? 'text-primary-foreground' : 'text-secondary-foreground'}`}
+                            />
+                            <span className="truncate max-w-[150px]" title={filename}>
+                              {filename}
+                            </span>
+                            <Download className="h-4 w-4 flex-shrink-0 ml-auto opacity-50" />
                           </a>
                         )
-                      }
-                      return (
-                        <a
-                          key={idx}
-                          href={url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={`flex items-center gap-2 p-2.5 rounded-md hover:opacity-80 transition-colors text-sm border ${isMe ? 'border-primary-foreground/20 bg-primary-foreground/10' : 'border-secondary-foreground/20 bg-secondary-foreground/10'}`}
-                        >
-                          <FileIcon
-                            className={`h-4 w-4 flex-shrink-0 ${isMe ? 'text-primary-foreground' : 'text-secondary-foreground'}`}
-                          />
-                          <span className="truncate max-w-[150px]" title={filename}>
-                            {filename}
-                          </span>
-                          <Download className="h-4 w-4 flex-shrink-0 ml-auto opacity-50" />
-                        </a>
-                      )
-                    })}
+                      })}
+                    </div>
+                  )}
+                  {msg.content !== '[Anexo]' && (
+                    <div className="text-[15px] leading-relaxed break-words">
+                      {renderMessage(msg.content, isMe)}
+                    </div>
+                  )}
+                  <div
+                    className={`text-[10px] mt-1.5 font-medium flex items-center justify-end ${
+                      isMe ? 'text-primary-foreground/70' : 'text-secondary-foreground/70'
+                    }`}
+                  >
+                    {timestamp}
                   </div>
-                )}
-                {msg.content !== '[Anexo]' && (
-                  <div className="text-[15px] leading-relaxed break-words">
-                    {renderMessage(msg.content, isMe)}
-                  </div>
-                )}
-                <div
-                  className={`text-[10px] mt-1.5 font-medium flex items-center justify-end ${
-                    isMe ? 'text-primary-foreground/70' : 'text-secondary-foreground/70'
-                  }`}
-                >
-                  {timestamp}
                 </div>
+                {isMe && (
+                  <SmartAvatar
+                    jid="me"
+                    name={user?.name || 'Você'}
+                    isInstance={true}
+                    deviceRecord={device}
+                    className="h-7 w-7 border border-white/10 shadow-sm flex-shrink-0 mb-1 hidden sm:block"
+                    fallbackClassName="bg-black/20 text-xs"
+                  />
+                )}
               </div>
             </div>
           )

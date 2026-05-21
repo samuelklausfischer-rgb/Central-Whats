@@ -3,6 +3,7 @@ import { Search, ChevronDown, MonitorSmartphone } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { getContactTags } from '@/services/contact_tags'
+import { SmartAvatar } from '@/components/chat/SmartAvatar'
 import { useRealtime } from '@/hooks/use-realtime'
 import { Button } from '@/components/ui/button'
 import {
@@ -17,6 +18,7 @@ export function ChatList({
   selectedDeviceId,
   onSelectDevice,
   conversations,
+  contacts,
   selectedContact,
   onSelectContact,
 }: any) {
@@ -169,17 +171,14 @@ export function ChatList({
                     : 'border-transparent hover:bg-white/5 hover:border-white/10 hover:shadow-lg hover:shadow-black/20'
                 }`}
               >
-                <Avatar
-                  className={`h-12 w-12 border ${isSelected ? 'border-blue-500/50' : 'border-white/10 shadow-sm'}`}
-                >
-                  <AvatarFallback className="bg-black/40 text-foreground font-medium text-sm">
-                    {conv.sender_name
-                      ? conv.sender_name.substring(0, 2).toUpperCase()
-                      : conv.remote_sender === 'Unknown Sender'
-                        ? '??'
-                        : conv.remote_sender.substring(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
+                <SmartAvatar
+                  jid={conv.remote_sender}
+                  name={conv.sender_name}
+                  instanceKey={selectedDevice.instance_key}
+                  contactRecord={contacts.find((c: any) => c.remote_jid === conv.remote_sender)}
+                  className={`h-12 w-12 border flex-shrink-0 ${isSelected ? 'border-blue-500/50' : 'border-white/10 shadow-sm'}`}
+                  fallbackClassName="bg-black/40 text-foreground font-medium text-sm"
+                />
 
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-baseline mb-0.5">

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-21T19:43:30.817Z",
+  "generatedAt": "2026-05-21T19:50:18.747Z",
   "collections": [
     {
       "name": "users",
@@ -121,6 +121,18 @@
         {
           "name": "signature",
           "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "avatar_url",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "avatar_updated_at",
+          "type": "date",
           "required": false,
           "system": false
         }
@@ -486,6 +498,60 @@
       "indexes": [
         "CREATE INDEX idx_scheduled_messages_scheduled_at ON scheduled_messages (scheduled_at)",
         "CREATE INDEX idx_scheduled_messages_status ON scheduled_messages (status)"
+      ]
+    },
+    {
+      "name": "contacts",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != ''",
+        "delete": "@request.auth.id != ''"
+      },
+      "fields": [
+        {
+          "name": "remote_jid",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "name",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "avatar_url",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "avatar_updated_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_contacts_remote_jid ON contacts (remote_jid) WHERE remote_jid != ''"
       ]
     }
   ]

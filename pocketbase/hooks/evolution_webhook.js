@@ -123,6 +123,46 @@ routerAdd('POST', '/backend/v1/webhooks/evolution/messages-upsert', (e) => {
         }
       }
 
+      try {
+        let contactRecord
+        try {
+          contactRecord = $app.findFirstRecordByData('contacts', 'remote_jid', remoteSender)
+        } catch (_) {
+          contactRecord = null
+        }
+
+        if (contactRecord) {
+          let changed = false
+          if (pushName && !contactRecord.get('name')) {
+            contactRecord.set('name', pushName)
+            changed = true
+          }
+          if (
+            messageData.profilePicUrl &&
+            messageData.profilePicUrl !== contactRecord.getString('avatar_url')
+          ) {
+            contactRecord.set('avatar_url', messageData.profilePicUrl)
+            contactRecord.set('avatar_updated_at', new Date().toISOString())
+            changed = true
+          }
+          if (changed) {
+            $app.save(contactRecord)
+          }
+        } else {
+          const contactsCol = $app.findCollectionByNameOrId('contacts')
+          const newContact = new Record(contactsCol)
+          newContact.set('remote_jid', remoteSender)
+          newContact.set('name', pushName || '')
+          if (messageData.profilePicUrl) {
+            newContact.set('avatar_url', messageData.profilePicUrl)
+            newContact.set('avatar_updated_at', new Date().toISOString())
+          }
+          $app.save(newContact)
+        }
+      } catch (contactErr) {
+        writeLog('error', 'Failed to update contact: ' + contactErr.message)
+      }
+
       if (existingMsg) {
         existingMsg.set('content', content)
         existingMsg.set('sender_name', pushName || existingMsg.get('sender_name'))

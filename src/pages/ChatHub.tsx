@@ -4,8 +4,9 @@ import { Settings2 } from 'lucide-react'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { ChatList } from '@/components/chat/ChatList'
 import { ChatWindow } from '@/components/chat/ChatWindow'
-import { getDevices } from '@/services/devices'
+import { getDevices, syncDeviceAvatar } from '@/services/devices'
 import { getMessages } from '@/services/messages'
+import { getContacts } from '@/services/contacts'
 import { useRealtime } from '@/hooks/use-realtime'
 import { Button } from '@/components/ui/button'
 import { SignatureManagerDialog } from '@/components/SignatureManagerDialog'
@@ -18,9 +19,13 @@ export default function ChatHub() {
   const [devices, setDevices] = useState<any[]>([])
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null)
   const [messages, setMessages] = useState<any[]>([])
+  const [contacts, setContacts] = useState<any[]>([])
   const [selectedContact, setSelectedContact] = useState<string | null>(null)
 
   useEffect(() => {
+    getContacts()
+      .then(setContacts)
+      .catch(() => {})
     getDevices().then((data) => {
       setDevices(data)
       const savedId = sessionStorage.getItem('activeDeviceId')
@@ -39,16 +44,28 @@ export default function ChatHub() {
     else if (e.action === 'delete') setDevices((prev) => prev.filter((d) => d.id !== e.record.id))
   })
 
+  useRealtime('contacts', (e) => {
+    if (e.action === 'create') setContacts((prev) => [e.record, ...prev])
+    else if (e.action === 'update')
+      setContacts((prev) => prev.map((c) => (c.id === e.record.id ? e.record : c)))
+    else if (e.action === 'delete') setContacts((prev) => prev.filter((c) => c.id !== e.record.id))
+  })
+
   useEffect(() => {
     if (selectedDeviceId) {
       sessionStorage.setItem('activeDeviceId', selectedDeviceId)
       getMessages(selectedDeviceId).then(setMessages)
       setSelectedContact(null)
+
+      const device = devices.find((d) => d.id === selectedDeviceId)
+      if (device && (!device.avatar_url || !device.avatar_updated_at)) {
+        syncDeviceAvatar(device.id).catch(() => {})
+      }
     } else {
       setMessages([])
       setSelectedContact(null)
     }
-  }, [selectedDeviceId])
+  }, [selectedDeviceId, devices])
 
   useRealtime('messages', (e) => {
     if (e.action === 'create' && e.record.direction === 'inbound') {
@@ -132,6 +149,7 @@ export default function ChatHub() {
           selectedDeviceId={selectedDeviceId}
           onSelectDevice={setSelectedDeviceId}
           conversations={conversations}
+          contacts={contacts}
           selectedContact={selectedContact}
           onSelectContact={setSelectedContact}
           isMobile={isMobile}
@@ -142,6 +160,7 @@ export default function ChatHub() {
           device={selectedDevice}
           contact={selectedContact}
           conversation={currentConversation}
+          contacts={contacts}
           onBack={() => setSelectedContact(null)}
           isMobile={isMobile}
         />
