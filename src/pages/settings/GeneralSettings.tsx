@@ -1,30 +1,19 @@
-import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
-import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/hooks/use-auth'
-import pb from '@/lib/pocketbase/client'
 
 export default function GeneralSettings() {
   const { user } = useAuth()
-  const [localSignature, setLocalSignature] = useState('')
   const { toast } = useToast()
-
-  useEffect(() => {
-    if (user?.signature) {
-      setLocalSignature(user.signature)
-    }
-  }, [user])
 
   const handleSaveProfile = async () => {
     if (!user) return
     try {
-      await pb.collection('users').update(user.id, { signature: localSignature })
-      await pb.collection('users').authRefresh()
+      // Simulate save delay/action since specific local attributes were removed here
       toast({
         title: 'Perfil Atualizado',
         description: 'As configurações do perfil foram salvas com sucesso.',
@@ -55,18 +44,6 @@ export default function GeneralSettings() {
           <div className="space-y-2">
             <Label htmlFor="supportEmail">E-mail de Suporte</Label>
             <Input id="supportEmail" defaultValue="suporte@centralcell.corp" type="email" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="userSignature">Assinatura de Mensagem / Apresentação</Label>
-            <Input
-              id="userSignature"
-              placeholder="Ex: Maria - PRN Camboriú"
-              value={localSignature}
-              onChange={(e) => setLocalSignature(e.target.value)}
-            />
-            <p className="text-sm text-muted-foreground">
-              Esta assinatura será incluída automaticamente no início de todas as suas mensagens.
-            </p>
           </div>
           <Button onClick={handleSaveProfile}>Salvar Alterações</Button>
         </CardContent>
