@@ -7,6 +7,7 @@ import Devices from './pages/Devices'
 import ChatHub from './pages/ChatHub'
 import CRM from './pages/CRM'
 import Notes from './pages/Notes'
+import Triggers from './pages/Triggers'
 import NotFound from './pages/NotFound'
 import Layout from './components/Layout'
 import { AppProvider } from './stores/useAppStore'
@@ -42,6 +43,7 @@ const App = () => (
                 <Route path="/chat" element={<ChatHub />} />
                 <Route path="/crm" element={<CRM />} />
                 <Route path="/notes" element={<Notes />} />
+                <Route path="/triggers" element={<Triggers />} />
                 <Route path="/settings" element={<SettingsLayout />}>
                   <Route path="devices" element={<Devices />} />
                   <Route path="general" element={<GeneralSettings />} />

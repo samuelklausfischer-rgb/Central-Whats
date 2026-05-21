@@ -10,10 +10,14 @@ import {
   MessageSquare,
   Info,
   User,
+  Zap,
 } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { getTriggers } from '@/services/message_triggers'
+import { useRealtime } from '@/hooks/use-realtime'
 import { useAuth } from '@/hooks/use-auth'
 import { sendMessage } from '@/services/messages'
 import pb from '@/lib/pocketbase/client'
@@ -185,7 +189,23 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
   const [msgText, setMsgText] = useState('')
   const scrollRef = useRef<HTMLDivElement>(null)
 
+  const [triggers, setTriggers] = useState<any[]>([])
+  const [searchTrigger, setSearchTrigger] = useState('')
+  const [isTriggerOpen, setIsTriggerOpen] = useState(false)
+
   const messages = conversation?.messages || []
+
+  useEffect(() => {
+    getTriggers()
+      .then(setTriggers)
+      .catch(() => {})
+  }, [])
+
+  useRealtime('message_triggers', () => {
+    getTriggers()
+      .then(setTriggers)
+      .catch(() => {})
+  })
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
@@ -230,6 +250,16 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
     })
     toast({ title: 'Tarefa Criada' })
   }
+
+  const handleSelectTrigger = (content: string) => {
+    setMsgText((prev) => (prev ? prev + '\n\n' + content : content))
+    setIsTriggerOpen(false)
+    setSearchTrigger('')
+  }
+
+  const filteredTriggers = triggers.filter((t) =>
+    t.title.toLowerCase().includes(searchTrigger.toLowerCase()),
+  )
 
   if (!device || !contact) {
     return (
@@ -385,6 +415,57 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
           </div>
         )}
         <form onSubmit={handleSend} className="flex items-end gap-3 max-w-4xl mx-auto w-full">
+          <Popover open={isTriggerOpen} onOpenChange={setIsTriggerOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="text-muted-foreground hover:text-blue-400 hover:bg-white/5 h-[48px] w-[48px] rounded-full flex-shrink-0 transition-colors"
+              >
+                <Zap className="h-5 w-5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              className="w-80 p-0 mb-2 border-white/10 bg-zinc-950/95 backdrop-blur-xl"
+              align="start"
+              side="top"
+              sideOffset={10}
+            >
+              <div className="p-3 border-b border-white/10">
+                <h4 className="font-medium text-sm mb-2 text-foreground/90">Gatilhos Rápidos</h4>
+                <input
+                  className="w-full bg-black/40 border border-white/10 rounded-md px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+                  placeholder="Buscar gatilho..."
+                  value={searchTrigger}
+                  onChange={(e) => setSearchTrigger(e.target.value)}
+                />
+              </div>
+              <div className="max-h-60 overflow-y-auto p-2">
+                {filteredTriggers.length === 0 ? (
+                  <div className="p-3 text-center text-sm text-muted-foreground">
+                    Nenhum gatilho encontrado.
+                  </div>
+                ) : (
+                  filteredTriggers.map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      className="w-full text-left p-2 rounded-md hover:bg-white/10 transition-colors group mb-1 last:mb-0"
+                      onClick={() => handleSelectTrigger(t.content)}
+                    >
+                      <div className="font-medium text-sm text-foreground/90 group-hover:text-blue-400 transition-colors truncate">
+                        {t.title}
+                      </div>
+                      <div className="text-xs text-muted-foreground truncate mt-0.5">
+                        {t.content}
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
           <Button
             type="button"
             variant="ghost"

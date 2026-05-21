@@ -8,6 +8,7 @@ import {
   Settings,
   ChevronRight,
   User,
+  Zap,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -27,6 +28,7 @@ const navItems = [
   { title: 'Chat', url: '/chat', icon: MessageSquare },
   { title: 'Tarefas Internas', url: '/crm', icon: ListTodo },
   { title: 'Anotações', url: '/notes', icon: StickyNote },
+  { title: 'Gatilhos', url: '/triggers', icon: Zap },
 ]
 
 export function AppSidebar() {
