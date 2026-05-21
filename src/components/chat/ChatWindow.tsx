@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, Fragment } from 'react'
 import {
   ArrowLeft,
   Send,
@@ -19,6 +19,163 @@ import { sendMessage } from '@/services/messages'
 import pb from '@/lib/pocketbase/client'
 import useAppStore from '@/stores/useAppStore'
 import { useToast } from '@/hooks/use-toast'
+
+const formatInline = (text: string, isMe: boolean): React.ReactNode => {
+  const regex = /(https?:\/\/[^\s]+|`[^`]+`|\*[^*]+\*|_[^_]+_|~[^~]+~)/g
+  const parts = text.split(regex)
+
+  return parts.map((part, i) => {
+    if (!part) return null
+
+    if (part.match(/^https?:\/\/[^\s]+$/)) {
+      return (
+        <a
+          key={i}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`hover:underline break-all font-medium transition-colors ${
+            isMe ? 'text-blue-100 hover:text-white' : 'text-blue-400 hover:text-blue-300'
+          }`}
+        >
+          {part}
+        </a>
+      )
+    }
+    if (part.startsWith('`') && part.endsWith('`')) {
+      return (
+        <code
+          key={i}
+          className="bg-black/30 px-1.5 py-0.5 rounded text-[13px] font-mono text-white/90"
+        >
+          {part.slice(1, -1)}
+        </code>
+      )
+    }
+    if (part.startsWith('*') && part.endsWith('*')) {
+      return (
+        <strong key={i} className="font-bold">
+          {formatInline(part.slice(1, -1), isMe)}
+        </strong>
+      )
+    }
+    if (part.startsWith('_') && part.endsWith('_')) {
+      return (
+        <em key={i} className="italic">
+          {formatInline(part.slice(1, -1), isMe)}
+        </em>
+      )
+    }
+    if (part.startsWith('~') && part.endsWith('~')) {
+      return (
+        <del key={i} className="line-through">
+          {formatInline(part.slice(1, -1), isMe)}
+        </del>
+      )
+    }
+
+    return <Fragment key={i}>{part}</Fragment>
+  })
+}
+
+const renderMessage = (content: string, isMe: boolean) => {
+  if (!content) return null
+  const parts = content.split(/(```[\s\S]*?```)/g)
+
+  return parts.map((part, i) => {
+    if (part.startsWith('```') && part.endsWith('```')) {
+      return (
+        <pre
+          key={i}
+          className="bg-black/30 p-3 rounded-md my-2 text-[13px] overflow-x-auto font-mono text-white/90 border border-white/10 whitespace-pre-wrap"
+        >
+          <code>{part.slice(3, -3)}</code>
+        </pre>
+      )
+    }
+
+    const lines = part.split('\n')
+    const result: React.ReactNode[] = []
+    let currentList: { type: 'ul' | 'ol'; items: string[] } | null = null
+
+    const flushList = () => {
+      if (currentList) {
+        if (currentList.type === 'ul') {
+          result.push(
+            <ul
+              key={`ul-${result.length}`}
+              className="list-disc pl-5 my-2 space-y-1 marker:text-white/50"
+            >
+              {currentList.items.map((item, idx) => (
+                <li key={idx}>{formatInline(item, isMe)}</li>
+              ))}
+            </ul>,
+          )
+        } else {
+          result.push(
+            <ol
+              key={`ol-${result.length}`}
+              className="list-decimal pl-5 my-2 space-y-1 marker:text-white/50"
+            >
+              {currentList.items.map((item, idx) => (
+                <li key={idx}>{formatInline(item, isMe)}</li>
+              ))}
+            </ol>,
+          )
+        }
+        currentList = null
+      }
+    }
+
+    for (let j = 0; j < lines.length; j++) {
+      const line = lines[j]
+      const isUl = line.match(/^[-*]\s+(.*)$/)
+      const isOl = line.match(/^\d+\.\s+(.*)$/)
+      const isQuote = line.match(/^>\s+(.*)$/)
+
+      if (isUl) {
+        if (currentList && currentList.type !== 'ul') flushList()
+        if (!currentList) currentList = { type: 'ul', items: [] }
+        currentList.items.push(isUl[1])
+      } else if (isOl) {
+        if (currentList && currentList.type !== 'ol') flushList()
+        if (!currentList) currentList = { type: 'ol', items: [] }
+        currentList.items.push(isOl[1])
+      } else {
+        flushList()
+        if (isQuote) {
+          result.push(
+            <blockquote
+              key={`quote-${j}`}
+              className={`border-l-4 pl-3 py-1 my-2 italic rounded-r ${
+                isMe
+                  ? 'border-white/40 bg-white/10 text-white'
+                  : 'border-blue-500/50 bg-blue-500/10 text-foreground/90'
+              }`}
+            >
+              {formatInline(isQuote[1], isMe)}
+            </blockquote>,
+          )
+        } else {
+          const nextLine = lines[j + 1]
+          const isNextBlock =
+            nextLine !== undefined &&
+            (nextLine.match(/^[-*]\s+/) || nextLine.match(/^\d+\.\s+/) || nextLine.match(/^>\s+/))
+
+          result.push(
+            <Fragment key={`line-${j}`}>
+              {formatInline(line, isMe)}
+              {j < lines.length - 1 && !isNextBlock && <br />}
+            </Fragment>,
+          )
+        }
+      }
+    }
+    flushList()
+
+    return <Fragment key={i}>{result}</Fragment>
+  })
+}
 
 export function ChatWindow({ device, contact, conversation, onBack, isMobile }: any) {
   const { user } = useAuth()
@@ -184,9 +341,9 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
                     : 'bg-white/10 text-foreground rounded-bl-sm border border-white/5 backdrop-blur-md'
                 }`}
               >
-                <p className="text-[15px] leading-relaxed break-words whitespace-pre-wrap">
-                  {msg.content}
-                </p>
+                <div className="text-[15px] leading-relaxed break-words">
+                  {renderMessage(msg.content, isMe)}
+                </div>
                 <div
                   className={`text-[10px] mt-1.5 font-medium flex items-center justify-end ${
                     isMe ? 'text-blue-100/70' : 'text-muted-foreground'
