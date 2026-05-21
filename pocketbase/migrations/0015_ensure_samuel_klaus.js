@@ -8,6 +8,8 @@ migrate(
     } catch (_) {
       record = new Record(users)
       record.set('username', 'samuel_klaus')
+      record.setEmail('samuel_klaus@admin.centralcell.com')
+      record.setVerified(true)
     }
 
     record.set('name', 'Samuel Klaus')
