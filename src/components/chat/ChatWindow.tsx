@@ -362,7 +362,11 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
 
   const handleAddTask = () => {
     if (!device || !contact) return
-    const contactName = contact === 'Unknown Sender' ? contact : `+${contact}`
+    const contactName = conversation?.sender_name
+      ? conversation.sender_name
+      : contact === 'Unknown Sender'
+        ? contact
+        : `+${contact}`
     addTask({
       title: `Acompanhamento: ${contactName}`,
       status: 'pendente',
@@ -431,7 +435,11 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
           </Avatar>
           <div className="min-w-0">
             <h3 className="font-semibold text-[16px] text-foreground tracking-tight truncate flex items-center gap-2">
-              {contact === 'Unknown Sender' ? contact : `+${contact}`}
+              {conversation?.sender_name
+                ? conversation.sender_name
+                : contact === 'Unknown Sender'
+                  ? contact
+                  : `+${contact}`}
             </h3>
             <div className="flex items-center gap-2 mt-0.5 truncate">
               <span className="text-xs text-muted-foreground font-medium truncate">
@@ -506,12 +514,25 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
               <div className="py-8 flex flex-col items-center border-b border-white/10">
                 <Avatar className="h-32 w-32 mb-5 border border-white/10 shadow-2xl">
                   <AvatarFallback className="text-3xl bg-black/40 text-foreground">
-                    <User className="h-12 w-12 opacity-50" />
+                    {conversation?.sender_name ? (
+                      <span className="text-4xl">
+                        {conversation.sender_name.substring(0, 2).toUpperCase()}
+                      </span>
+                    ) : (
+                      <User className="h-12 w-12 opacity-50" />
+                    )}
                   </AvatarFallback>
                 </Avatar>
-                <h3 className="font-bold text-xl text-foreground tracking-tight">
-                  {contact === 'Unknown Sender' ? contact : `+${contact}`}
+                <h3 className="font-bold text-xl text-foreground tracking-tight text-center">
+                  {conversation?.sender_name
+                    ? conversation.sender_name
+                    : contact === 'Unknown Sender'
+                      ? contact
+                      : `+${contact}`}
                 </h3>
+                {conversation?.sender_name && contact !== 'Unknown Sender' && (
+                  <p className="text-muted-foreground mt-1 text-sm">+{contact}</p>
+                )}
                 <p className="text-muted-foreground mt-1 text-sm">Via {device.name}</p>
 
                 {contactTags.length > 0 && (
@@ -581,7 +602,11 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
                     <span className="text-blue-200">{user?.name || 'Você'}</span>
                   ) : (
                     <span className="text-blue-400">
-                      {msg.remote_sender ? `+${msg.remote_sender}` : 'Unknown Sender'}
+                      {msg.sender_name
+                        ? msg.sender_name
+                        : msg.remote_sender
+                          ? `+${msg.remote_sender}`
+                          : 'Unknown Sender'}
                     </span>
                   )}
                 </div>

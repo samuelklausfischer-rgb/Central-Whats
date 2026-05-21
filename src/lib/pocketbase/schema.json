@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-21T19:02:12.893Z",
+  "generatedAt": "2026-05-21T19:06:26.592Z",
   "collections": [
     {
       "name": "users",
@@ -196,6 +196,12 @@
         {
           "name": "attachments",
           "type": "file",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "sender_name",
+          "type": "text",
           "required": false,
           "system": false
         }

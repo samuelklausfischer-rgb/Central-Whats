@@ -110,11 +110,14 @@ routerAdd('POST', '/backend/v1/webhooks/evolution/messages-upsert', (e) => {
         return e.json(200, { status: 'error', message: 'device not found' })
       }
 
+      const pushName = messageData.pushName || ''
+
       const messagesCol = $app.findCollectionByNameOrId('messages')
       const newMsg = new Record(messagesCol)
       newMsg.set('content', content)
       newMsg.set('device_id', device.id)
       newMsg.set('remote_sender', remoteSender)
+      newMsg.set('sender_name', pushName)
       newMsg.set('direction', 'inbound')
       newMsg.set('is_read', false)
       $app.save(newMsg)

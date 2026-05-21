@@ -74,6 +74,7 @@ export default function ChatHub() {
       if (!map.has(sender)) {
         map.set(sender, {
           remote_sender: sender,
+          sender_name: m.sender_name || '',
           lastMessage: m,
           messages: [],
           unread_count: 0,
@@ -81,6 +82,9 @@ export default function ChatHub() {
       }
       const conv = map.get(sender)
       conv.messages.push(m)
+      if (m.sender_name) {
+        conv.sender_name = m.sender_name
+      }
       if (new Date(m.created) > new Date(conv.lastMessage.created)) {
         conv.lastMessage = m
       }
