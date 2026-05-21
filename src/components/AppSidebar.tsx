@@ -9,7 +9,9 @@ import {
   ChevronRight,
   User,
   Zap,
+  ShieldAlert,
 } from 'lucide-react'
+import { useAuth } from '@/hooks/use-auth'
 import {
   Sidebar,
   SidebarContent,
@@ -33,6 +35,7 @@ const navItems = [
 
 export function AppSidebar() {
   const location = useLocation()
+  const { user } = useAuth()
   const isSettingsActive = location.pathname.startsWith('/settings')
 
   return (
@@ -64,6 +67,22 @@ export function AppSidebar() {
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
+
+          {user?.is_admin && (
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                isActive={location.pathname === '/admin'}
+                tooltip="Administração"
+                className="py-5"
+              >
+                <Link to="/admin" className="flex items-center gap-3">
+                  <ShieldAlert className="h-5 w-5" />
+                  <span className="text-sm">Administração</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
 
           <div className="my-4 mx-2 h-px bg-white/10" />
 

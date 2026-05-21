@@ -1,0 +1,17 @@
+migrate(
+  (app) => {
+    const devices = app.findCollectionByNameOrId('devices')
+    const rule =
+      "@request.auth.id != '' && (@request.auth.is_admin = true || @request.auth.allowed_devices ?= id)"
+    devices.listRule = rule
+    devices.viewRule = rule
+    app.save(devices)
+  },
+  (app) => {
+    const devices = app.findCollectionByNameOrId('devices')
+    const rule = "@request.auth.id != ''"
+    devices.listRule = rule
+    devices.viewRule = rule
+    app.save(devices)
+  },
+)

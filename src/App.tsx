@@ -16,6 +16,7 @@ import GeneralSettings from './pages/settings/GeneralSettings'
 import LabelsSettings from './pages/settings/LabelsSettings'
 import Login from './pages/Login'
 import { AuthProvider, useAuth } from './hooks/use-auth'
+import AdminPage from './pages/admin/AdminPage'
 
 const ProtectedRoute = () => {
   const { isAuthenticated, loading } = useAuth()
@@ -26,6 +27,11 @@ const ProtectedRoute = () => {
       </div>
     )
   return isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />
+}
+
+const AdminRoute = () => {
+  const { user } = useAuth()
+  return user?.is_admin ? <Outlet /> : <Navigate to="/dashboard" replace />
 }
 
 const App = () => (
@@ -45,6 +51,9 @@ const App = () => (
                 <Route path="/crm" element={<CRM />} />
                 <Route path="/notes" element={<Notes />} />
                 <Route path="/triggers" element={<Triggers />} />
+                <Route element={<AdminRoute />}>
+                  <Route path="/admin" element={<AdminPage />} />
+                </Route>
                 <Route path="/settings" element={<SettingsLayout />}>
                   <Route path="devices" element={<Devices />} />
                   <Route path="general" element={<GeneralSettings />} />
