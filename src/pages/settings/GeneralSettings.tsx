@@ -17,6 +17,7 @@ export default function GeneralSettings() {
 
   const [name, setName] = useState(user?.name || '')
   const [username, setUsername] = useState(user?.username || '')
+  const [signature, setSignature] = useState(user?.signature || '')
 
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
@@ -80,6 +81,7 @@ export default function GeneralSettings() {
       const formData = new FormData()
       formData.append('name', name)
       formData.append('username', username)
+      formData.append('signature', signature)
       if (avatarFile) {
         formData.append('avatar', avatarFile)
       }
@@ -174,6 +176,19 @@ export default function GeneralSettings() {
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="username"
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="userSignature">Assinatura Pessoal</Label>
+                <textarea
+                  id="userSignature"
+                  value={signature}
+                  onChange={(e) => setSignature(e.target.value)}
+                  placeholder="Ex: Atendente João"
+                  className="w-full flex min-h-[80px] rounded-md border border-white/10 bg-black/40 px-3 py-2 text-[14px] placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500/50 resize-y text-foreground"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Será incluída no topo de suas mensagens.
+                </p>
               </div>
               <Button onClick={handleSaveUserProfile} disabled={isUploading}>
                 {isUploading ? 'Salvando...' : 'Salvar Perfil'}
