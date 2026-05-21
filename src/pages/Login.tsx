@@ -15,11 +15,14 @@ export default function Login() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorMsg('')
-    if (!username.trim()) {
+
+    const trimmedUsername = username.trim()
+    if (!trimmedUsername) {
       setErrorMsg('Por favor, informe seu usuário.')
       return
     }
-    const { error } = await signIn(username, password)
+
+    const { error } = await signIn(trimmedUsername, password)
     if (!error) {
       navigate('/dashboard')
     } else {
