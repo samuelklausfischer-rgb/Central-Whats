@@ -45,9 +45,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signUp = async (identity: string, password: string) => {
     try {
-      await pb
-        .collection('users')
-        .create({ username: identity, password, passwordConfirm: password })
+      const data: Record<string, string> = { password, passwordConfirm: password }
+      if (identity.includes('@')) {
+        data.email = identity
+      } else {
+        data.username = identity
+      }
+
+      await pb.collection('users').create(data)
       await pb.collection('users').authWithPassword(identity, password)
       return { error: null }
     } catch (error) {
