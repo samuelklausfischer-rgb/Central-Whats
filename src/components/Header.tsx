@@ -18,9 +18,9 @@ import { Link } from 'react-router-dom'
 export function Header() {
   const { user, signOut } = useAuth()
 
-  const avatarUrl = user?.avatar
-    ? pb.files.getURL(user, user.avatar)
-    : `https://img.usecurling.com/ppl/thumbnail?seed=${user?.id || 'admin'}`
+  const avatarUrl = user?.avatar ? pb.files.getURL(user, user.avatar) : undefined
+
+  const userInitials = (user?.name?.[0] || user?.username?.[0] || 'U').toUpperCase()
 
   return (
     <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-4 border-b border-white/10 bg-black/40 px-4 backdrop-blur-xl sm:px-6">
@@ -54,8 +54,8 @@ export function Header() {
               >
                 <Avatar className="h-7 w-7 border border-white/20">
                   <AvatarImage src={avatarUrl} alt={user?.name || 'User'} />
-                  <AvatarFallback className="bg-blue-900 text-blue-200">
-                    <User className="h-4 w-4" />
+                  <AvatarFallback className="bg-blue-900 text-blue-200 text-xs font-medium">
+                    {userInitials}
                   </AvatarFallback>
                 </Avatar>
                 <span className="text-sm font-medium text-gray-200 hidden sm:block">

@@ -1,34 +1,186 @@
+import { useState, useRef } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/hooks/use-auth'
+import pb from '@/lib/pocketbase/client'
+import { Upload, X } from 'lucide-react'
 
 export default function GeneralSettings() {
   const { user } = useAuth()
   const { toast } = useToast()
 
-  const handleSaveProfile = async () => {
-    if (!user) return
-    try {
-      // Simulate save delay/action since specific local attributes were removed here
-      toast({
-        title: 'Perfil Atualizado',
-        description: 'As configurações do perfil foram salvas com sucesso.',
-      })
-    } catch (e) {
-      toast({
-        title: 'Erro',
-        description: 'Não foi possível salvar o perfil.',
-        variant: 'destructive',
-      })
+  const [name, setName] = useState(user?.name || '')
+  const [username, setUsername] = useState(user?.username || '')
+
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleSaveCompany = async () => {
+    toast({
+      title: 'Perfil Atualizado',
+      description: 'As configurações da empresa foram salvas com sucesso.',
+    })
+  }
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (file.size > 5242880) {
+        toast({
+          title: 'Erro de validação',
+          description: 'A imagem deve ter no máximo 5MB',
+          variant: 'destructive',
+        })
+        if (fileInputRef.current) fileInputRef.current.value = ''
+        return
+      }
+      setAvatarFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
     }
   }
 
+  const handleRemoveAvatar = async () => {
+    if (!user) return
+    try {
+      setIsUploading(true)
+      await pb.collection('users').update(user.id, { avatar: null })
+      await pb.collection('users').authRefresh()
+      setAvatarFile(null)
+      setAvatarPreview(null)
+      toast({ title: 'Sucesso', description: 'Foto de perfil removida com sucesso.' })
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    } catch (e: any) {
+      toast({
+        title: 'Erro',
+        description: e.message || 'Não foi possível remover a foto.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  const handleSaveUserProfile = async () => {
+    if (!user) return
+    try {
+      setIsUploading(true)
+      const formData = new FormData()
+      formData.append('name', name)
+      formData.append('username', username)
+      if (avatarFile) {
+        formData.append('avatar', avatarFile)
+      }
+
+      await pb.collection('users').update(user.id, formData)
+      await pb.collection('users').authRefresh()
+
+      setAvatarFile(null)
+      setAvatarPreview(null)
+      toast({ title: 'Sucesso', description: 'Perfil de usuário atualizado com sucesso.' })
+    } catch (e: any) {
+      toast({
+        title: 'Erro',
+        description: e.message || 'Não foi possível salvar as informações do perfil.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  const currentAvatarUrl = user?.avatar ? pb.files.getURL(user, user.avatar) : undefined
+  const displayAvatar = avatarPreview || currentAvatarUrl
+  const userInitials = (user?.name?.[0] || user?.username?.[0] || 'U').toUpperCase()
+
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-6 pb-12">
+      <Card>
+        <CardHeader>
+          <CardTitle>Perfil do Usuário</CardTitle>
+          <CardDescription>Informações pessoais e foto de perfil.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6 max-w-2xl">
+          <div className="flex flex-col sm:flex-row gap-6 items-start">
+            <div className="flex flex-col items-center gap-3">
+              <Avatar className="h-24 w-24 border border-white/10 shadow-lg">
+                <AvatarImage src={displayAvatar} alt={user?.name} className="object-cover" />
+                <AvatarFallback className="bg-black/40 text-foreground text-2xl font-medium">
+                  {userInitials}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Trocar
+                </Button>
+                {(user?.avatar || avatarPreview) && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 text-red-400 hover:text-red-300 hover:bg-red-400/10"
+                    onClick={handleRemoveAvatar}
+                    disabled={isUploading}
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Remover
+                  </Button>
+                )}
+              </div>
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handleAvatarChange}
+              />
+            </div>
+
+            <div className="flex-1 space-y-4 w-full">
+              <div className="space-y-2">
+                <Label htmlFor="userName">Nome</Label>
+                <Input
+                  id="userName"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Seu nome"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="userUsername">Nome de Usuário</Label>
+                <Input
+                  id="userUsername"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="username"
+                />
+              </div>
+              <Button onClick={handleSaveUserProfile} disabled={isUploading}>
+                {isUploading ? 'Salvando...' : 'Salvar Perfil'}
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>Perfil da Empresa</CardTitle>
@@ -45,7 +197,9 @@ export default function GeneralSettings() {
             <Label htmlFor="supportEmail">E-mail de Suporte</Label>
             <Input id="supportEmail" defaultValue="suporte@centralcell.corp" type="email" />
           </div>
-          <Button onClick={handleSaveProfile}>Salvar Alterações</Button>
+          <Button onClick={handleSaveCompany} disabled={isUploading}>
+            Salvar Alterações
+          </Button>
         </CardContent>
       </Card>
 
