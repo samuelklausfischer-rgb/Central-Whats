@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-21T11:46:17.302Z",
+  "generatedAt": "2026-05-21T12:09:37.508Z",
   "collections": [
     {
       "name": "users",
@@ -101,6 +101,12 @@
         },
         {
           "name": "instance_key",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "signature",
           "type": "text",
           "required": false,
           "system": false
