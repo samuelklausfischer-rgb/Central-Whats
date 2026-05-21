@@ -6,15 +6,25 @@ import { Input } from '@/components/ui/input'
 import { GridBackground } from '@/components/ui/grid-background'
 
 export default function Login() {
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [errorMsg, setErrorMsg] = useState('')
   const { signIn } = useAuth()
   const navigate = useNavigate()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    const { error } = await signIn(email, password)
-    if (!error) navigate('/dashboard')
+    setErrorMsg('')
+    if (!username.trim()) {
+      setErrorMsg('Por favor, informe seu usuário.')
+      return
+    }
+    const { error } = await signIn(username, password)
+    if (!error) {
+      navigate('/dashboard')
+    } else {
+      setErrorMsg('Usuário ou senha incorretos.')
+    }
   }
 
   return (
@@ -32,10 +42,10 @@ export default function Login() {
         </div>
         <div className="space-y-4">
           <Input
-            placeholder="Email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Usuário"
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             required
           />
           <Input
@@ -45,6 +55,7 @@ export default function Login() {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
+          {errorMsg && <p className="text-sm text-red-500 font-medium">{errorMsg}</p>}
         </div>
         <Button className="w-full h-11 text-base" type="submit">
           Entrar

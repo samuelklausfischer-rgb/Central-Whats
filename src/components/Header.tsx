@@ -59,7 +59,7 @@ export function Header() {
                   </AvatarFallback>
                 </Avatar>
                 <span className="text-sm font-medium text-gray-200 hidden sm:block">
-                  {user?.name || user?.email?.split('@')[0] || 'Admin'}
+                  {user?.name || user?.username || 'Admin'}
                 </span>
               </Button>
             </DropdownMenuTrigger>
@@ -72,7 +72,7 @@ export function Header() {
                   <p className="text-sm font-medium leading-none text-white">
                     {user?.name || 'Admin'}
                   </p>
-                  <p className="text-xs leading-none text-gray-400">{user?.email}</p>
+                  <p className="text-xs leading-none text-gray-400">@{user?.username}</p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator className="bg-white/10" />
