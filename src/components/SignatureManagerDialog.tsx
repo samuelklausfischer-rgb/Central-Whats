@@ -36,8 +36,12 @@ function DeviceSignatureItem({ device }: { device: any }) {
     try {
       await updateDevice(device.id, { signature })
       toast({ title: 'Assinatura salva', description: `Para ${device.name}` })
-    } catch (err) {
-      toast({ title: 'Erro ao salvar', variant: 'destructive' })
+    } catch (err: any) {
+      toast({
+        title: 'Erro ao salvar',
+        description: err?.message || 'Verifique sua conexão e tente novamente.',
+        variant: 'destructive',
+      })
     } finally {
       setSaving(false)
     }

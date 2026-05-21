@@ -8,7 +8,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/hooks/use-auth'
 import pb from '@/lib/pocketbase/client'
-import { Upload, X } from 'lucide-react'
+import { Upload, X, MessageSquareSignature } from 'lucide-react'
+import { SignatureManagerDialog } from '@/components/SignatureManagerDialog'
 
 export default function GeneralSettings() {
   const { user } = useAuth()
@@ -21,6 +22,7 @@ export default function GeneralSettings() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isSignatureManagerOpen, setIsSignatureManagerOpen] = useState(false)
 
   const handleSaveCompany = async () => {
     toast({
@@ -202,6 +204,34 @@ export default function GeneralSettings() {
           </Button>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Assinaturas de Instâncias</CardTitle>
+          <CardDescription>
+            Configure a assinatura de apresentação para cada número do WhatsApp conectado.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4 max-w-2xl">
+          <p className="text-sm text-muted-foreground">
+            Personalize a assinatura que será enviada junto com suas mensagens para cada aparelho
+            celular. Isso ajuda na identificação do atendente e melhora a comunicação corporativa.
+          </p>
+          <Button
+            onClick={() => setIsSignatureManagerOpen(true)}
+            className="w-full sm:w-auto"
+            variant="outline"
+          >
+            <MessageSquareSignature className="mr-2 h-4 w-4" />
+            Gerenciar Assinaturas
+          </Button>
+        </CardContent>
+      </Card>
+
+      <SignatureManagerDialog
+        open={isSignatureManagerOpen}
+        onOpenChange={setIsSignatureManagerOpen}
+      />
 
       <Card>
         <CardHeader>
