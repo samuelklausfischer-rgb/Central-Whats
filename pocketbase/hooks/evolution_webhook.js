@@ -1,12 +1,45 @@
-routerAdd('POST', '/backend/v1/webhooks/evolution', (e) => {
+routerAdd('POST', '/backend/v1/webhooks/evolution/messages-upsert', (e) => {
   const body = e.requestInfo().body || {}
 
-  $app
-    .logger()
-    .info('Evolution webhook request received', 'event', body.event, 'instance', body.instance)
+  const logger = $app.logger()
+
+  const logContext = {
+    event: body.event || 'unknown',
+    instance: body.instance || 'unknown',
+    fromMe: 'unknown',
+    remoteJid: 'unknown',
+    remoteJidAlt: 'unknown',
+    normalized_phone: 'unknown',
+    status: 'unknown',
+    reason: '',
+  }
+
+  const writeLog = (level, msg) => {
+    logger[level](
+      msg,
+      'event',
+      logContext.event,
+      'instance',
+      logContext.instance,
+      'fromMe',
+      logContext.fromMe,
+      'remoteJid',
+      logContext.remoteJid,
+      'remoteJidAlt',
+      logContext.remoteJidAlt,
+      'normalized_phone',
+      logContext.normalized_phone,
+      'status',
+      logContext.status,
+      'reason',
+      logContext.reason,
+    )
+  }
 
   if (!body.instance || !body.data) {
-    $app.logger().warn('Evolution webhook discarded', 'reason', 'missing instance or data')
+    logContext.status = 'discarded'
+    logContext.reason = 'missing instance or data'
+    writeLog('warn', 'Evolution webhook discarded')
     return e.json(200, { status: 'ignored', reason: 'missing instance or data' })
   }
 
@@ -19,26 +52,21 @@ routerAdd('POST', '/backend/v1/webhooks/evolution', (e) => {
       }
 
       if (!messageData) {
-        $app.logger().warn('Evolution webhook discarded', 'reason', 'empty data array/object')
+        logContext.status = 'discarded'
+        logContext.reason = 'empty data array/object'
+        writeLog('warn', 'Evolution webhook discarded')
         return e.json(200, { status: 'ignored', reason: 'empty data' })
       }
 
       const key = messageData.key || {}
-
-      $app
-        .logger()
-        .info(
-          'Evolution webhook identity check',
-          'fromMe',
-          key.fromMe,
-          'remoteJid',
-          key.remoteJid,
-          'remoteJidAlt',
-          key.remoteJidAlt,
-        )
+      logContext.fromMe = key.fromMe !== undefined ? String(key.fromMe) : 'unknown'
+      logContext.remoteJid = key.remoteJid || 'unknown'
+      logContext.remoteJidAlt = key.remoteJidAlt || 'unknown'
 
       if (key.fromMe === true) {
-        $app.logger().warn('Evolution webhook discarded', 'reason', 'fromMe is true')
+        logContext.status = 'discarded'
+        logContext.reason = 'fromMe is true'
+        writeLog('info', 'Evolution webhook discarded')
         return e.json(200, { status: 'ignored', reason: 'fromMe is true' })
       }
 
@@ -48,18 +76,14 @@ routerAdd('POST', '/backend/v1/webhooks/evolution', (e) => {
         .replace(/@lid/g, '')
         .replace(/\D/g, '')
 
+      logContext.normalized_phone = remoteSender || 'unknown'
+
       if (!remoteSender) {
-        $app
-          .logger()
-          .warn(
-            'Evolution webhook discarded',
-            'reason',
-            'no remote sender identified after normalization',
-          )
+        logContext.status = 'discarded'
+        logContext.reason = 'no remote sender identified after normalization'
+        writeLog('warn', 'Evolution webhook discarded')
         return e.json(200, { status: 'ignored', reason: 'no remote sender identified' })
       }
-
-      $app.logger().info('Evolution webhook normalized sender', 'normalizedSender', remoteSender)
 
       const msgObj = messageData.message || {}
       const content =
@@ -70,9 +94,9 @@ routerAdd('POST', '/backend/v1/webhooks/evolution', (e) => {
         ''
 
       if (!content) {
-        $app
-          .logger()
-          .warn('Evolution webhook discarded', 'reason', 'no text content found in message')
+        logContext.status = 'discarded'
+        logContext.reason = 'no text content found in message'
+        writeLog('warn', 'Evolution webhook discarded')
         return e.json(200, { status: 'ignored', reason: 'no text content' })
       }
 
@@ -80,13 +104,9 @@ routerAdd('POST', '/backend/v1/webhooks/evolution', (e) => {
       try {
         device = $app.findFirstRecordByData('devices', 'instance_key', 'Celular teste')
       } catch (err) {
-        $app
-          .logger()
-          .warn(
-            'Evolution webhook discarded',
-            'reason',
-            'device exactly named "Celular teste" not found in instance_key',
-          )
+        logContext.status = 'discarded'
+        logContext.reason = 'device exactly named "Celular teste" not found in instance_key'
+        writeLog('warn', 'Evolution webhook discarded')
         return e.json(200, { status: 'error', message: 'device not found' })
       }
 
@@ -102,24 +122,21 @@ routerAdd('POST', '/backend/v1/webhooks/evolution', (e) => {
       device.set('unread_count', (device.getInt('unread_count') || 0) + 1)
       $app.save(device)
 
-      $app
-        .logger()
-        .info(
-          'Evolution webhook processed successfully',
-          'device_id',
-          device.id,
-          'remote_sender',
-          remoteSender,
-        )
+      logContext.status = 'processed'
+      logContext.reason = 'success'
+      writeLog('info', 'Evolution webhook processed successfully')
+
       return e.json(200, { status: 'success' })
     } catch (err) {
-      $app.logger().error('Evolution webhook processing error', 'error', err.message)
+      logContext.status = 'discarded'
+      logContext.reason = 'internal error during processing'
+      writeLog('error', 'Evolution webhook processing error: ' + err.message)
       return e.json(200, { status: 'error', message: 'internal error during processing' })
     }
   }
 
-  $app
-    .logger()
-    .warn('Evolution webhook discarded', 'reason', 'event type ignored', 'event_type', body.event)
+  logContext.status = 'discarded'
+  logContext.reason = 'event type ignored'
+  writeLog('warn', 'Evolution webhook discarded')
   return e.json(200, { status: 'ignored', event: body.event })
 })
