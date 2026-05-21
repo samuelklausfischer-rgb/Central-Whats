@@ -24,7 +24,19 @@ routerAdd('POST', '/backend/v1/webhooks/evolution', (e) => {
       }
 
       const remoteJid = key.remoteJid || ''
-      const remoteSender = remoteJid.split('@')[0]
+      let remoteSender = remoteJid.split('@')[0]
+
+      // Extract actual sender for group messages
+      if (remoteJid.includes('@g.us')) {
+        const participant = messageData.participant || ''
+        if (participant) {
+          remoteSender = participant.split('@')[0]
+        }
+      }
+
+      if (!remoteSender) {
+        remoteSender = ''
+      }
 
       const msgObj = messageData.message || {}
       let content = msgObj.conversation || ''

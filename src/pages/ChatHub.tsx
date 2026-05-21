@@ -63,7 +63,7 @@ export default function ChatHub() {
   const conversations = useMemo(() => {
     const map = new Map<string, any>()
     messages.forEach((m) => {
-      const sender = m.remote_sender || 'Desconhecido'
+      const sender = m.remote_sender || 'Unknown Sender'
       if (!map.has(sender)) {
         map.set(sender, {
           remote_sender: sender,

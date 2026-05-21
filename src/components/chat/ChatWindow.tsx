@@ -362,11 +362,12 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
 
   const handleAddTask = () => {
     if (!device || !contact) return
+    const contactName = contact === 'Unknown Sender' ? contact : `+${contact}`
     addTask({
-      title: `Acompanhamento: +${contact}`,
+      title: `Acompanhamento: ${contactName}`,
       status: 'pendente',
       deviceId: device.id,
-      description: `Tarefa criada via ChatHub para o contato +${contact}.`,
+      description: `Tarefa criada via ChatHub para o contato ${contactName}.`,
     })
     toast({ title: 'Tarefa Criada' })
   }
@@ -430,7 +431,7 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
           </Avatar>
           <div className="min-w-0">
             <h3 className="font-semibold text-[16px] text-foreground tracking-tight truncate flex items-center gap-2">
-              +{contact}
+              {contact === 'Unknown Sender' ? contact : `+${contact}`}
             </h3>
             <div className="flex items-center gap-2 mt-0.5 truncate">
               <span className="text-xs text-muted-foreground font-medium truncate">
@@ -508,7 +509,9 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
                     <User className="h-12 w-12 opacity-50" />
                   </AvatarFallback>
                 </Avatar>
-                <h3 className="font-bold text-xl text-foreground tracking-tight">+{contact}</h3>
+                <h3 className="font-bold text-xl text-foreground tracking-tight">
+                  {contact === 'Unknown Sender' ? contact : `+${contact}`}
+                </h3>
                 <p className="text-muted-foreground mt-1 text-sm">Via {device.name}</p>
 
                 {contactTags.length > 0 && (
@@ -573,6 +576,15 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
                     : 'bg-zinc-900/80 text-foreground rounded-bl-sm border border-white/5 backdrop-blur-xl shadow-black/40'
                 }`}
               >
+                <div className="text-xs font-bold mb-1.5 opacity-90 flex items-center justify-between">
+                  {isMe ? (
+                    <span className="text-blue-200">{user?.name || 'Você'}</span>
+                  ) : (
+                    <span className="text-blue-400">
+                      {msg.remote_sender ? `+${msg.remote_sender}` : 'Unknown Sender'}
+                    </span>
+                  )}
+                </div>
                 {msg.attachments && msg.attachments.length > 0 && (
                   <div className="flex flex-col gap-2 mb-2">
                     {msg.attachments.map((filename: string, idx: number) => {

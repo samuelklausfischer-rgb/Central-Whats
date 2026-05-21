@@ -173,7 +173,9 @@ export function ChatList({
                   className={`h-12 w-12 border ${isSelected ? 'border-blue-500/50' : 'border-white/10 shadow-sm'}`}
                 >
                   <AvatarFallback className="bg-black/40 text-foreground font-medium text-sm">
-                    {conv.remote_sender.substring(0, 2).toUpperCase()}
+                    {conv.remote_sender === 'Unknown Sender'
+                      ? '??'
+                      : conv.remote_sender.substring(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
 
@@ -186,7 +188,9 @@ export function ChatList({
                           : 'font-medium text-foreground/90'
                       }`}
                     >
-                      +{conv.remote_sender}
+                      {conv.remote_sender === 'Unknown Sender'
+                        ? conv.remote_sender
+                        : `+${conv.remote_sender}`}
                     </p>
                     <span
                       className={`text-[11px] ${
