@@ -56,14 +56,22 @@ export default function ChatHub() {
       sessionStorage.setItem('activeDeviceId', selectedDeviceId)
       getMessages(selectedDeviceId).then(setMessages)
       setSelectedContact(null)
-
-      const device = devices.find((d) => d.id === selectedDeviceId)
-      if (device && (!device.avatar_url || !device.avatar_updated_at)) {
-        syncDeviceAvatar(device.id).catch(() => {})
-      }
     } else {
       setMessages([])
       setSelectedContact(null)
+    }
+  }, [selectedDeviceId])
+
+  useEffect(() => {
+    if (selectedDeviceId) {
+      const device = devices.find((d) => d.id === selectedDeviceId)
+      if (device && (!device.avatar_url || !device.avatar_updated_at)) {
+        const syncKey = `synced_device_${device.id}`
+        if (!sessionStorage.getItem(syncKey)) {
+          sessionStorage.setItem(syncKey, '1')
+          syncDeviceAvatar(device.id).catch(() => {})
+        }
+      }
     }
   }, [selectedDeviceId, devices])
 

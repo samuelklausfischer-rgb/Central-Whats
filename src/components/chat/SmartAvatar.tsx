@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { User, Building2 } from 'lucide-react'
 import { fetchAvatar } from '@/services/contacts'
@@ -14,7 +14,8 @@ export function SmartAvatar({
   fallbackClassName,
 }: any) {
   const [imgError, setImgError] = useState(false)
-  const [isFetching, setIsFetching] = useState(false)
+  const isFetchingRef = useRef(false)
+  const fetchedJidRef = useRef<string | null>(null)
 
   const record = isInstance ? deviceRecord : contactRecord
   const avatarUrl = record?.avatar_url
@@ -31,25 +32,46 @@ export function SmartAvatar({
       jid &&
       instanceKey &&
       (missingUrl || isOld) &&
-      !isFetching &&
-      jid !== 'Unknown Sender'
+      !isFetchingRef.current &&
+      jid !== 'Unknown Sender' &&
+      fetchedJidRef.current !== jid
     ) {
-      setIsFetching(true)
+      isFetchingRef.current = true
+      fetchedJidRef.current = jid
       fetchAvatar(jid, instanceKey)
         .catch(() => {})
-        .finally(() => setIsFetching(false))
+        .finally(() => {
+          // We intentionally do not reset isFetchingRef here.
+          // This prevents the same component from retrying aggressively on every re-render if it fails.
+          // The request deduplication/throttling at the service level will also protect the API.
+        })
     }
   }, [jid, instanceKey, missingUrl, isOld, isInstance])
 
   const handleImageError = () => {
     setImgError(true)
-    if (!isInstance && jid && instanceKey && !isFetching && jid !== 'Unknown Sender') {
-      setIsFetching(true)
-      fetchAvatar(jid, instanceKey)
-        .catch(() => {})
-        .finally(() => setIsFetching(false))
+    if (
+      !isInstance &&
+      jid &&
+      instanceKey &&
+      !isFetchingRef.current &&
+      jid !== 'Unknown Sender' &&
+      fetchedJidRef.current !== jid
+    ) {
+      isFetchingRef.current = true
+      fetchedJidRef.current = jid
+      fetchAvatar(jid, instanceKey).catch(() => {})
     }
   }
+
+  // Reset imgError and fetching ref if the url changes externally (e.g. from real-time sync)
+  useEffect(() => {
+    if (avatarUrl) {
+      setImgError(false)
+      fetchedJidRef.current = null
+      isFetchingRef.current = false
+    }
+  }, [avatarUrl])
 
   const showInitials =
     name && name !== 'Unknown Sender'

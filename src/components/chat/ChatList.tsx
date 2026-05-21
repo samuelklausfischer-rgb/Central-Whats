@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Search, ChevronDown, MonitorSmartphone } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -26,21 +26,29 @@ export function ChatList({
 
   const [deviceTags, setDeviceTags] = useState<any[]>([])
 
-  const loadDeviceTags = async () => {
-    if (selectedDeviceId) {
-      try {
-        const tags = await getContactTags(selectedDeviceId)
-        setDeviceTags(tags)
-      } catch {
-        /* intentionally ignored */
+  const loadDeviceTagsRef = useRef<NodeJS.Timeout | null>(null)
+
+  const loadDeviceTags = () => {
+    if (loadDeviceTagsRef.current) clearTimeout(loadDeviceTagsRef.current)
+    loadDeviceTagsRef.current = setTimeout(async () => {
+      if (selectedDeviceId) {
+        try {
+          const tags = await getContactTags(selectedDeviceId)
+          setDeviceTags(tags)
+        } catch {
+          /* intentionally ignored */
+        }
+      } else {
+        setDeviceTags([])
       }
-    } else {
-      setDeviceTags([])
-    }
+    }, 500)
   }
 
   useEffect(() => {
     loadDeviceTags()
+    return () => {
+      if (loadDeviceTagsRef.current) clearTimeout(loadDeviceTagsRef.current)
+    }
   }, [selectedDeviceId])
 
   useRealtime('contact_tags', () => {
