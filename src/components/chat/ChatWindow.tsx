@@ -392,8 +392,9 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
 
   if (!device || !contact) {
     return (
-      <div className="hidden md:flex flex-col items-center justify-center h-full bg-background/10 backdrop-blur-sm flex-1">
-        <div className="max-w-md text-center p-8 rounded-3xl bg-black/20 border border-white/5 shadow-2xl backdrop-blur-xl">
+      <div className="hidden md:flex flex-col items-center justify-center h-full bg-zinc-950/30 backdrop-blur-sm flex-1 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(59,130,246,0.05),transparent_70%)]" />
+        <div className="max-w-md text-center p-8 rounded-3xl bg-black/20 border border-white/5 shadow-[0_8px_30px_rgba(0,0,0,0.4)] backdrop-blur-2xl relative z-10">
           <div className="h-24 w-24 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_rgba(37,99,235,0.2)]">
             <MessageSquare className="h-10 w-10 text-blue-400" />
           </div>
@@ -410,7 +411,7 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
 
   return (
     <div className="flex flex-col h-full bg-transparent flex-1 relative min-w-0">
-      <div className="h-[72px] border-b border-white/10 bg-black/20 backdrop-blur-xl flex items-center justify-between px-6 sticky top-0 z-10 flex-shrink-0">
+      <div className="h-[72px] border-b border-white/5 bg-zinc-950/40 backdrop-blur-2xl shadow-[0_4px_20px_rgba(0,0,0,0.2)] flex items-center justify-between px-6 sticky top-0 z-10 flex-shrink-0">
         <div className="flex items-center gap-4 min-w-0">
           {isMobile && (
             <Button
@@ -422,7 +423,7 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
               <ArrowLeft className="h-5 w-5" />
             </Button>
           )}
-          <Avatar className="h-11 w-11 border border-white/10 shadow-sm flex-shrink-0">
+          <Avatar className="h-11 w-11 border border-white/10 shadow-lg flex-shrink-0 transition-transform duration-300 hover:scale-105">
             <AvatarFallback className="bg-black/40 text-foreground">
               <User className="h-5 w-5 opacity-50" />
             </AvatarFallback>
@@ -445,7 +446,7 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-foreground/80 hover:text-foreground hover:bg-white/10 rounded-full flex-shrink-0 relative"
+                className="text-foreground/80 hover:text-foreground hover:bg-white/10 rounded-full flex-shrink-0 relative transition-all duration-300 hover:scale-105"
               >
                 <Tags className="h-5 w-5" />
                 {contactTags.length > 0 && (
@@ -492,7 +493,7 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
               <Button
                 variant="ghost"
                 size="icon"
-                className="rounded-full text-foreground/80 hover:text-foreground hover:bg-white/10 flex-shrink-0 ml-1"
+                className="rounded-full text-foreground/80 hover:text-foreground hover:bg-white/10 flex-shrink-0 ml-1 transition-all duration-300 hover:scale-105"
               >
                 <MoreVertical className="h-5 w-5" />
               </Button>
@@ -551,7 +552,7 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
       </div>
 
       <div
-        className="flex-1 overflow-y-auto p-6 space-y-5 bg-black/10 backdrop-blur-sm"
+        className="flex-1 overflow-y-auto p-6 space-y-5 bg-black/5 backdrop-blur-sm custom-scrollbar relative"
         ref={scrollRef}
       >
         {messages.map((msg: any) => {
@@ -561,12 +562,15 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
             minute: '2-digit',
           })
           return (
-            <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+            <div
+              key={msg.id}
+              className={`flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-300 ${isMe ? 'items-end' : 'items-start'}`}
+            >
               <div
-                className={`max-w-[85%] sm:max-w-[75%] rounded-2xl px-4 py-3 shadow-sm relative group ${
+                className={`max-w-[85%] sm:max-w-[75%] rounded-2xl px-4 py-3 shadow-md relative group transition-all duration-300 ${
                   isMe
-                    ? 'bg-blue-600/80 text-white rounded-br-sm border border-blue-500/30'
-                    : 'bg-white/10 text-foreground rounded-bl-sm border border-white/5 backdrop-blur-md'
+                    ? 'bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-br-sm border border-blue-500/30 shadow-blue-900/20'
+                    : 'bg-zinc-900/80 text-foreground rounded-bl-sm border border-white/5 backdrop-blur-xl shadow-black/40'
                 }`}
               >
                 {msg.attachments && msg.attachments.length > 0 && (
@@ -581,7 +585,7 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
                             href={url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="block max-w-[240px] overflow-hidden rounded-md border border-white/10 hover:opacity-90 transition-opacity"
+                            className="block max-w-[240px] overflow-hidden rounded-xl border border-white/10 hover:opacity-90 hover:scale-[1.02] transition-all duration-300 shadow-sm"
                           >
                             <img src={url} alt={filename} className="w-full h-auto object-cover" />
                           </a>
@@ -625,7 +629,7 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
         })}
       </div>
 
-      <div className="flex flex-col bg-black/20 backdrop-blur-xl border-t border-white/10 flex-shrink-0 p-4">
+      <div className="flex flex-col bg-zinc-950/60 backdrop-blur-2xl border-t border-white/5 shadow-[0_-4px_20px_rgba(0,0,0,0.2)] flex-shrink-0 p-4 z-10 relative">
         {(user?.signature || device?.signature) && (
           <div className="px-2 pb-3 text-[12px] text-muted-foreground flex flex-col gap-1.5">
             {user?.signature && (
@@ -684,7 +688,7 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="text-muted-foreground hover:text-blue-400 hover:bg-white/5 h-[48px] w-[48px] rounded-full flex-shrink-0 transition-colors"
+                  className="text-muted-foreground hover:text-blue-400 hover:bg-white/5 h-[48px] w-[48px] rounded-full flex-shrink-0 transition-all duration-300 hover:scale-105 active:scale-95"
                 >
                   <Zap className="h-5 w-5" />
                 </Button>
@@ -742,13 +746,13 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
               variant="ghost"
               size="icon"
               onClick={() => fileInputRef.current?.click()}
-              className="text-muted-foreground hover:text-foreground hover:bg-white/5 h-[48px] w-[48px] rounded-full flex-shrink-0 transition-colors"
+              className="text-muted-foreground hover:text-foreground hover:bg-white/5 h-[48px] w-[48px] rounded-full flex-shrink-0 transition-all duration-300 hover:scale-105 active:scale-95"
             >
               <Paperclip className="h-5 w-5" />
             </Button>
-            <div className="flex-1 bg-black/40 border border-white/10 rounded-2xl flex items-end focus-within:ring-1 focus-within:ring-blue-500/50 focus-within:border-blue-500/50 transition-all overflow-hidden shadow-inner">
+            <div className="flex-1 bg-black/40 border border-white/10 hover:border-white/20 rounded-2xl flex items-end focus-within:ring-2 focus-within:ring-blue-500/50 focus-within:border-blue-500/50 transition-all duration-300 overflow-hidden shadow-inner group">
               <textarea
-                className="flex-1 bg-transparent border-none min-h-[48px] max-h-[120px] px-4 py-3.5 text-[15px] text-foreground placeholder:text-muted-foreground focus-visible:outline-none resize-none leading-relaxed"
+                className="flex-1 bg-transparent border-none min-h-[48px] max-h-[120px] px-4 py-3 text-[15px] text-foreground placeholder:text-muted-foreground focus-visible:outline-none resize-none leading-relaxed custom-scrollbar pt-3.5"
                 placeholder="Digite uma mensagem..."
                 value={msgText}
                 onChange={(e) => setMsgText(e.target.value)}
@@ -764,7 +768,7 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="text-muted-foreground hover:text-foreground hover:bg-transparent h-[48px] w-[48px] flex-shrink-0 transition-colors"
+                className="text-muted-foreground hover:text-foreground hover:bg-transparent h-[48px] w-[48px] flex-shrink-0 transition-all duration-300 hover:scale-110 active:scale-95"
               >
                 <Smile className="h-5 w-5" />
               </Button>
@@ -776,7 +780,7 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
                   variant="ghost"
                   size="icon"
                   disabled={!msgText.trim() && attachments.length === 0}
-                  className="rounded-full flex-shrink-0 h-[48px] w-[48px] bg-white/5 hover:bg-white/10 text-foreground transition-all disabled:opacity-50"
+                  className="rounded-full flex-shrink-0 h-[48px] w-[48px] bg-white/5 hover:bg-white/10 text-foreground transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
                 >
                   <CalendarClock className="h-5 w-5" />
                 </Button>
@@ -846,7 +850,7 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
               type="submit"
               size="icon"
               disabled={!msgText.trim() && attachments.length === 0}
-              className="rounded-full flex-shrink-0 h-[48px] w-[48px] bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/25 transition-all disabled:opacity-50 disabled:shadow-none"
+              className="rounded-full flex-shrink-0 h-[48px] w-[48px] bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/30 hover:shadow-blue-600/50 transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:shadow-none disabled:hover:scale-100"
             >
               <Send className="h-5 w-5 ml-0.5" />
             </Button>

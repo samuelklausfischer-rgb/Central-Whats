@@ -46,13 +46,13 @@ export function ChatList({
   })
 
   return (
-    <div className="flex flex-col h-full bg-black/20 backdrop-blur-md border-r border-white/10 w-full md:w-[320px] lg:w-[380px] flex-shrink-0">
-      <div className="p-4 border-b border-white/10 space-y-4 bg-white/5">
+    <div className="flex flex-col h-full bg-zinc-950/40 backdrop-blur-2xl border-r border-white/5 w-full md:w-[320px] lg:w-[380px] flex-shrink-0">
+      <div className="p-4 border-b border-white/5 space-y-4 bg-white/5 shadow-[0_4px_20px_rgba(0,0,0,0.2)] z-10 relative">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="outline"
-              className="w-full h-14 bg-black/40 border-white/10 hover:bg-black/60 hover:text-white justify-between px-3"
+              className="w-full h-14 bg-black/40 border-white/10 hover:bg-black/60 hover:text-white justify-between px-3 shadow-inner transition-all duration-300"
             >
               {selectedDevice ? (
                 <div className="flex items-center gap-3 truncate">
@@ -129,13 +129,13 @@ export function ChatList({
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Pesquisar conversas..."
-            className="pl-9 bg-black/40 border-white/10 text-foreground placeholder:text-muted-foreground focus-visible:ring-blue-500/50 rounded-xl"
+            className="pl-9 bg-black/40 border-white/10 hover:border-white/20 text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-blue-500/50 rounded-xl transition-all shadow-inner"
             disabled={!selectedDeviceId}
           />
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto space-y-1 p-3">
+      <div className="flex-1 overflow-y-auto space-y-1.5 p-3 custom-scrollbar">
         {!selectedDeviceId ? (
           <div className="h-full flex flex-col items-center justify-center text-muted-foreground space-y-3 opacity-60">
             <MonitorSmartphone className="h-10 w-10" />
@@ -163,10 +163,10 @@ export function ChatList({
               <button
                 key={conv.remote_sender}
                 onClick={() => onSelectContact(conv.remote_sender)}
-                className={`w-full flex items-center gap-3 p-3 text-left rounded-xl transition-all duration-200 border ${
+                className={`w-full flex items-center gap-3 p-3 text-left rounded-xl transition-all duration-300 border ${
                   isSelected
-                    ? 'bg-blue-600/20 border-blue-500/30 shadow-[0_0_15px_rgba(37,99,235,0.1)]'
-                    : 'border-transparent hover:bg-white/5 hover:border-white/5'
+                    ? 'bg-blue-500/10 border-blue-500/30 shadow-[0_0_20px_rgba(37,99,235,0.15)]'
+                    : 'border-transparent hover:bg-white/5 hover:border-white/10 hover:shadow-lg hover:shadow-black/20'
                 }`}
               >
                 <Avatar

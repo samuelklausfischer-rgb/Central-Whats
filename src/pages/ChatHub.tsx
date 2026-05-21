@@ -96,7 +96,7 @@ export default function ChatHub() {
   const [isSignaturesModalOpen, setIsSignaturesModalOpen] = useState(false)
 
   return (
-    <div className="h-full w-full relative bg-background/20 backdrop-blur-xl border-white/10 flex rounded-none md:rounded-xl border overflow-hidden shadow-2xl">
+    <div className="h-full w-full relative bg-zinc-950/40 backdrop-blur-2xl border-white/5 flex rounded-none md:rounded-2xl border overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.4)]">
       {(!isMobile || !selectedContact) && (
         <Button
           variant="outline"
