@@ -113,7 +113,11 @@ routerAdd('POST', '/backend/v1/webhooks/evolution/messages-upsert', (e) => {
 
       if (externalId) {
         try {
-          existingMsg = $app.findFirstRecordByData('messages', 'external_id', externalId)
+          existingMsg = $app.findFirstRecordByFilter(
+            'messages',
+            'external_id = {:ext} && device_id = {:dev}',
+            { ext: externalId, dev: device.id },
+          )
         } catch (_) {
           existingMsg = null
         }
@@ -122,6 +126,7 @@ routerAdd('POST', '/backend/v1/webhooks/evolution/messages-upsert', (e) => {
       if (existingMsg) {
         existingMsg.set('content', content)
         existingMsg.set('sender_name', pushName || existingMsg.get('sender_name'))
+        existingMsg.set('origin', 'webhook')
         $app.save(existingMsg)
       } else {
         const newMsg = new Record(messagesCol)
@@ -131,6 +136,7 @@ routerAdd('POST', '/backend/v1/webhooks/evolution/messages-upsert', (e) => {
         newMsg.set('sender_name', pushName)
         newMsg.set('direction', isFromMe ? 'outbound' : 'inbound')
         newMsg.set('is_read', isFromMe ? true : false)
+        newMsg.set('origin', 'webhook')
         if (externalId) {
           newMsg.set('external_id', externalId)
         }

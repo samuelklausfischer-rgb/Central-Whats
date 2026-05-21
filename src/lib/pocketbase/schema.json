@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-21T19:14:28.183Z",
+  "generatedAt": "2026-05-21T19:23:56.423Z",
   "collections": [
     {
       "name": "users",
@@ -210,6 +210,13 @@
           "type": "text",
           "required": false,
           "system": false
+        },
+        {
+          "name": "origin",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["app", "webhook"]
         }
       ],
       "indexes": [

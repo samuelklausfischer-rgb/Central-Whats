@@ -4,6 +4,10 @@ onRecordAfterCreateSuccess((e) => {
     return e.next()
   }
 
+  if (record.getString('origin') === 'webhook') {
+    return e.next()
+  }
+
   const apikey = $secrets.get('EVOLUTION_API_KEY') || ''
 
   let instanceKey = 'Celular teste'

@@ -22,6 +22,7 @@ export const sendMessage = (data: {
     formData.append('sender_id', data.sender_id)
     formData.append('is_read', data.is_read.toString())
     formData.append('direction', 'outbound')
+    formData.append('origin', 'app')
     if (data.remote_sender) formData.append('remote_sender', data.remote_sender)
 
     data.attachments.forEach((file) => {
@@ -31,5 +32,5 @@ export const sendMessage = (data: {
     return pb.collection('messages').create(formData)
   }
 
-  return pb.collection('messages').create({ ...data, direction: 'outbound' })
+  return pb.collection('messages').create({ ...data, direction: 'outbound', origin: 'app' })
 }
