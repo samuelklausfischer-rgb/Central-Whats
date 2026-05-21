@@ -22,11 +22,6 @@ export default function Login() {
       return
     }
 
-    // Map 'Samuel Klaus' to 'samuel_klaus' to support legacy test requirement
-    if (trimmedUsername === 'Samuel Klaus') {
-      trimmedUsername = 'samuel_klaus'
-    }
-
     const { error } = await signIn(trimmedUsername, password)
     if (!error) {
       navigate('/dashboard')
