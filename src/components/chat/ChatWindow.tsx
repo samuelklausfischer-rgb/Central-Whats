@@ -13,7 +13,18 @@ import {
   Zap,
   Tags,
   Check,
+  CalendarClock,
 } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
+import { createScheduledMessage } from '@/services/scheduled_messages'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
@@ -201,6 +212,9 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
   const [contactTags, setContactTags] = useState<any[]>([])
   const [isLabelsOpen, setIsLabelsOpen] = useState(false)
 
+  const [isScheduleOpen, setIsScheduleOpen] = useState(false)
+  const [scheduleDate, setScheduleDate] = useState('')
+
   const messages = conversation?.messages || []
 
   useEffect(() => {
@@ -272,6 +286,32 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
       remote_sender: contact,
     })
     setMsgText('')
+  }
+
+  const handleSchedule = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!msgText.trim() || !device || !user || !contact || !scheduleDate) return
+
+    const userSig = user.signature ? `*${user.signature}*\n` : ''
+    const devSig = device.signature ? `\n\n${device.signature}` : ''
+    const content = userSig + msgText + devSig
+
+    try {
+      await createScheduledMessage({
+        content,
+        scheduled_at: new Date(scheduleDate).toISOString(),
+        status: 'pending',
+        device_id: device.id,
+        remote_sender: contact,
+        user_id: user.id,
+      })
+      toast({ title: 'Mensagem agendada com sucesso' })
+      setMsgText('')
+      setIsScheduleOpen(false)
+      setScheduleDate('')
+    } catch (err) {
+      toast({ title: 'Erro ao agendar mensagem', variant: 'destructive' })
+    }
   }
 
   const handleAddTask = () => {
@@ -609,6 +649,54 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
               <Smile className="h-5 w-5" />
             </Button>
           </div>
+          <Dialog open={isScheduleOpen} onOpenChange={setIsScheduleOpen}>
+            <DialogTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                disabled={!msgText.trim()}
+                className="rounded-full flex-shrink-0 h-[48px] w-[48px] bg-white/5 hover:bg-white/10 text-foreground transition-all disabled:opacity-50"
+              >
+                <CalendarClock className="h-5 w-5" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px] bg-zinc-950 border-white/10">
+              <DialogHeader>
+                <DialogTitle>Agendar Mensagem</DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="date">Data e Hora</Label>
+                  <input
+                    id="date"
+                    type="datetime-local"
+                    value={scheduleDate}
+                    onChange={(e) => setScheduleDate(e.target.value)}
+                    className="flex h-10 w-full rounded-md border border-white/10 bg-black/40 px-3 py-2 text-sm text-foreground ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Mensagem</Label>
+                  <div className="rounded-md border border-white/10 bg-black/40 px-3 py-2 text-sm text-muted-foreground min-h-[60px] max-h-[120px] overflow-y-auto whitespace-pre-wrap">
+                    {msgText || 'Nenhuma mensagem digitada...'}
+                  </div>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsScheduleOpen(false)}
+                  className="bg-transparent border-white/10 hover:bg-white/5"
+                >
+                  Cancelar
+                </Button>
+                <Button onClick={handleSchedule} disabled={!scheduleDate || !msgText.trim()}>
+                  Confirmar Agendamento
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
           <Button
             type="submit"
             size="icon"

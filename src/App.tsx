@@ -8,6 +8,7 @@ import ChatHub from './pages/ChatHub'
 import CRM from './pages/CRM'
 import Notes from './pages/Notes'
 import Triggers from './pages/Triggers'
+import ScheduledMessages from './pages/ScheduledMessages'
 import NotFound from './pages/NotFound'
 import Layout from './components/Layout'
 import { AppProvider } from './stores/useAppStore'
@@ -51,6 +52,7 @@ const App = () => (
                 <Route path="/crm" element={<CRM />} />
                 <Route path="/notes" element={<Notes />} />
                 <Route path="/triggers" element={<Triggers />} />
+                <Route path="/scheduled-messages" element={<ScheduledMessages />} />
                 <Route element={<AdminRoute />}>
                   <Route path="/admin" element={<AdminPage />} />
                 </Route>

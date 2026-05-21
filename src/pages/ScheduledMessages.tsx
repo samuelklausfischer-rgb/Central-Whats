@@ -1,0 +1,216 @@
+import React, { useEffect, useState } from 'react'
+import {
+  CalendarClock,
+  CheckCircle,
+  Clock,
+  Trash2,
+  XCircle,
+  AlertCircle,
+  Smartphone,
+} from 'lucide-react'
+
+import {
+  getScheduledMessages,
+  deleteScheduledMessage,
+  updateScheduledMessage,
+  ScheduledMessage,
+} from '@/services/scheduled_messages'
+import { useRealtime } from '@/hooks/use-realtime'
+import { useToast } from '@/hooks/use-toast'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+
+export default function ScheduledMessages() {
+  const [messages, setMessages] = useState<ScheduledMessage[]>([])
+  const [loading, setLoading] = useState(true)
+  const { toast } = useToast()
+
+  const loadMessages = async () => {
+    try {
+      const data = await getScheduledMessages()
+      setMessages(data)
+    } catch (err) {
+      toast({ title: 'Erro ao carregar mensagens agendadas', variant: 'destructive' })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadMessages()
+  }, [])
+
+  useRealtime('scheduled_messages', () => {
+    loadMessages()
+  })
+
+  const handleCancel = async (id: string) => {
+    try {
+      await updateScheduledMessage(id, { status: 'cancelled' })
+      toast({ title: 'Mensagem cancelada com sucesso' })
+    } catch {
+      toast({ title: 'Erro ao cancelar mensagem', variant: 'destructive' })
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteScheduledMessage(id)
+      toast({ title: 'Mensagem excluída com sucesso' })
+    } catch {
+      toast({ title: 'Erro ao excluir mensagem', variant: 'destructive' })
+    }
+  }
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return (
+          <Badge className="bg-amber-500/20 text-amber-500 border-amber-500/30 gap-1.5 flex items-center">
+            <Clock className="w-3.5 h-3.5" /> Pendente
+          </Badge>
+        )
+      case 'sent':
+        return (
+          <Badge className="bg-emerald-500/20 text-emerald-500 border-emerald-500/30 gap-1.5 flex items-center">
+            <CheckCircle className="w-3.5 h-3.5" /> Enviada
+          </Badge>
+        )
+      case 'failed':
+        return (
+          <Badge className="bg-red-500/20 text-red-500 border-red-500/30 gap-1.5 flex items-center">
+            <AlertCircle className="w-3.5 h-3.5" /> Falha
+          </Badge>
+        )
+      case 'cancelled':
+        return (
+          <Badge className="bg-zinc-500/20 text-zinc-400 border-zinc-500/30 gap-1.5 flex items-center">
+            <XCircle className="w-3.5 h-3.5" /> Cancelada
+          </Badge>
+        )
+      default:
+        return <Badge variant="outline">{status}</Badge>
+    }
+  }
+
+  const formatDateTime = (dateStr: string) => {
+    return new Intl.DateTimeFormat('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(new Date(dateStr))
+  }
+
+  return (
+    <div className="flex-1 overflow-y-auto bg-black/5 p-8">
+      <div className="max-w-6xl mx-auto space-y-6">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-display font-bold text-white tracking-tight flex items-center gap-3">
+            <CalendarClock className="w-8 h-8 text-blue-500" />
+            Mensagens Agendadas
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            Gerencie os envios programados, cancele ou remova mensagens antigas.
+          </p>
+        </div>
+
+        <Card className="bg-zinc-950/50 border-white/10 backdrop-blur-xl">
+          <CardHeader>
+            <CardTitle>Histórico de Agendamentos</CardTitle>
+            <CardDescription>
+              Visualize todas as suas mensagens com envio futuro ou já processadas.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="text-center py-10 text-muted-foreground">Carregando...</div>
+            ) : messages.length === 0 ? (
+              <div className="text-center py-16 text-muted-foreground flex flex-col items-center gap-3">
+                <CalendarClock className="w-10 h-10 opacity-20" />
+                <p>Nenhuma mensagem agendada encontrada.</p>
+              </div>
+            ) : (
+              <div className="rounded-md border border-white/10 overflow-hidden">
+                <Table>
+                  <TableHeader className="bg-white/5">
+                    <TableRow className="border-white/10 hover:bg-transparent">
+                      <TableHead>Contato</TableHead>
+                      <TableHead>Dispositivo</TableHead>
+                      <TableHead>Mensagem</TableHead>
+                      <TableHead>Agendado para</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {messages.map((msg) => (
+                      <TableRow
+                        key={msg.id}
+                        className="border-white/10 hover:bg-white/5 transition-colors"
+                      >
+                        <TableCell className="font-medium">+{msg.remote_sender}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-6 w-6 rounded-md bg-blue-500/20 border border-blue-500/30">
+                              <AvatarFallback className="bg-transparent">
+                                <Smartphone className="h-3 w-3 text-blue-400" />
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="text-xs text-muted-foreground">
+                              {msg.expand?.device_id?.name || 'Desconhecido'}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="max-w-[250px]">
+                          <div className="truncate text-sm text-foreground/80" title={msg.content}>
+                            {msg.content}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm whitespace-nowrap">
+                          {formatDateTime(msg.scheduled_at)}
+                        </TableCell>
+                        <TableCell>{getStatusBadge(msg.status)}</TableCell>
+                        <TableCell className="text-right whitespace-nowrap space-x-2">
+                          {msg.status === 'pending' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 bg-transparent border-white/10 hover:bg-white/5"
+                              onClick={() => handleCancel(msg.id!)}
+                            >
+                              Cancelar
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-red-400 hover:text-red-300 hover:bg-red-400/10"
+                            onClick={() => handleDelete(msg.id!)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  )
+}

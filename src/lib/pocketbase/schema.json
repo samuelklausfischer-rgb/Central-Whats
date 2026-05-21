@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-21T14:10:52.572Z",
+  "generatedAt": "2026-05-21T14:44:17.526Z",
   "collections": [
     {
       "name": "users",
@@ -384,6 +384,76 @@
         }
       ],
       "indexes": []
+    },
+    {
+      "name": "scheduled_messages",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (user_id = @request.auth.id || @request.auth.is_admin = true)",
+        "view": "@request.auth.id != '' && (user_id = @request.auth.id || @request.auth.is_admin = true)",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != '' && (user_id = @request.auth.id || @request.auth.is_admin = true)",
+        "delete": "@request.auth.id != '' && (user_id = @request.auth.id || @request.auth.is_admin = true)"
+      },
+      "fields": [
+        {
+          "name": "content",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "scheduled_at",
+          "type": "date",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["pending", "sent", "failed", "cancelled"]
+        },
+        {
+          "name": "device_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "devices"
+        },
+        {
+          "name": "remote_sender",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_scheduled_messages_scheduled_at ON scheduled_messages (scheduled_at)",
+        "CREATE INDEX idx_scheduled_messages_status ON scheduled_messages (status)"
+      ]
     }
   ]
 }

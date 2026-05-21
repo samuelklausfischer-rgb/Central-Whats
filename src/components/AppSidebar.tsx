@@ -10,6 +10,7 @@ import {
   User,
   Zap,
   ShieldAlert,
+  CalendarClock,
 } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
 import {
@@ -31,6 +32,7 @@ const navItems = [
   { title: 'Tarefas Internas', url: '/crm', icon: ListTodo },
   { title: 'Anotações', url: '/notes', icon: StickyNote },
   { title: 'Gatilhos', url: '/triggers', icon: Zap },
+  { title: 'Agendamentos', url: '/scheduled-messages', icon: CalendarClock },
 ]
 
 export function AppSidebar() {
