@@ -181,7 +181,10 @@ export function ChatList({
               >
                 <SmartAvatar
                   jid={conv.remote_sender}
-                  name={conv.sender_name}
+                  name={(() => {
+                    const cRecord = contacts.find((c: any) => c.remote_jid === conv.remote_sender)
+                    return cRecord?.nickname || conv.sender_name || cRecord?.name
+                  })()}
                   instanceKey={selectedDevice.instance_key}
                   contactRecord={contacts.find((c: any) => c.remote_jid === conv.remote_sender)}
                   className={`h-12 w-12 border flex-shrink-0 ${isSelected ? 'border-blue-500/50' : 'border-white/10 shadow-sm'}`}
@@ -197,11 +200,20 @@ export function ChatList({
                           : 'font-medium text-foreground/90'
                       }`}
                     >
-                      {conv.sender_name
-                        ? conv.sender_name
-                        : conv.remote_sender === 'Unknown Sender'
-                          ? conv.remote_sender
-                          : `+${conv.remote_sender}`}
+                      {(() => {
+                        const contactRecord = contacts?.find(
+                          (c: any) => c.remote_jid === conv.remote_sender,
+                        )
+                        return contactRecord?.nickname
+                          ? contactRecord.nickname
+                          : conv.sender_name && conv.sender_name !== 'Unknown Sender'
+                            ? conv.sender_name
+                            : contactRecord?.name && contactRecord.name !== 'Unknown Sender'
+                              ? contactRecord.name
+                              : conv.remote_sender === 'Unknown Sender'
+                                ? conv.remote_sender
+                                : `+${conv.remote_sender}`
+                      })()}
                     </p>
                     <span
                       className={`text-[11px] ${

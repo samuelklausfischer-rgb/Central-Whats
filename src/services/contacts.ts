@@ -3,6 +3,18 @@ import pb from '@/lib/pocketbase/client'
 export const getContacts = () => pb.collection('contacts').getFullList()
 export const getContact = (id: string) => pb.collection('contacts').getOne(id)
 
+export const updateContactByJid = async (
+  jid: string,
+  data: Partial<{ nickname: string; name: string }>,
+) => {
+  try {
+    const contact = await pb.collection('contacts').getFirstListItem(`remote_jid="${jid}"`)
+    return await pb.collection('contacts').update(contact.id, data)
+  } catch (err) {
+    return await pb.collection('contacts').create({ remote_jid: jid, ...data })
+  }
+}
+
 // Queue and deduplication for avatar fetching to prevent 429 Too Many Requests
 const avatarFetchPromises = new Map<string, Promise<any>>()
 const avatarFailedSet = new Set<string>()

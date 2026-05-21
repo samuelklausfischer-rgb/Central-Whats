@@ -18,6 +18,7 @@ import {
   File as FileIcon,
   Download,
   Image as ImageIcon,
+  Pencil,
 } from 'lucide-react'
 import {
   Dialog,
@@ -27,6 +28,7 @@ import {
   DialogFooter,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { createScheduledMessage } from '@/services/scheduled_messages'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -40,6 +42,7 @@ import { getContactTags, toggleContactTag } from '@/services/contact_tags'
 import { useRealtime } from '@/hooks/use-realtime'
 import { useAuth } from '@/hooks/use-auth'
 import { sendMessage } from '@/services/messages'
+import { updateContactByJid } from '@/services/contacts'
 import pb from '@/lib/pocketbase/client'
 import useAppStore from '@/stores/useAppStore'
 import { useToast } from '@/hooks/use-toast'
@@ -209,6 +212,8 @@ export function ChatWindow({ device, contact, conversation, contacts, onBack, is
   const { toast } = useToast()
 
   const [msgText, setMsgText] = useState('')
+  const [isNicknameOpen, setIsNicknameOpen] = useState(false)
+  const [nicknameInput, setNicknameInput] = useState('')
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const [triggers, setTriggers] = useState<any[]>([])
@@ -361,11 +366,7 @@ export function ChatWindow({ device, contact, conversation, contacts, onBack, is
 
   const handleAddTask = () => {
     if (!device || !contact) return
-    const contactName = conversation?.sender_name
-      ? conversation.sender_name
-      : contact === 'Unknown Sender'
-        ? contact
-        : `+${contact}`
+    const contactName = displayName
     addTask({
       title: `Acompanhamento: ${contactName}`,
       status: 'pendente',
@@ -387,6 +388,33 @@ export function ChatWindow({ device, contact, conversation, contacts, onBack, is
       await toggleContactTag(device.id, contact, labelId)
     } catch (err) {
       toast({ title: 'Erro ao alterar etiqueta', variant: 'destructive' })
+    }
+  }
+
+  const contactRecord = contacts?.find((c: any) => c.remote_jid === contact)
+
+  const displayName = contactRecord?.nickname
+    ? contactRecord.nickname
+    : conversation?.sender_name && conversation.sender_name !== 'Unknown Sender'
+      ? conversation.sender_name
+      : contactRecord?.name && contactRecord.name !== 'Unknown Sender'
+        ? contactRecord.name
+        : contact === 'Unknown Sender'
+          ? contact
+          : `+${contact}`
+
+  const handleEditNickname = () => {
+    setNicknameInput(contactRecord?.nickname || '')
+    setIsNicknameOpen(true)
+  }
+
+  const handleSaveNickname = async () => {
+    try {
+      await updateContactByJid(contact, { nickname: nicknameInput })
+      setIsNicknameOpen(false)
+      toast({ title: 'Apelido salvo com sucesso' })
+    } catch (err) {
+      toast({ title: 'Erro ao salvar apelido', variant: 'destructive' })
     }
   }
 
@@ -429,19 +457,23 @@ export function ChatWindow({ device, contact, conversation, contacts, onBack, is
           )}
           <SmartAvatar
             jid={contact}
-            name={conversation?.sender_name}
+            name={displayName}
             instanceKey={device?.instance_key}
-            contactRecord={contacts?.find((c: any) => c.remote_jid === contact)}
+            contactRecord={contactRecord}
             className="h-11 w-11 border border-white/10 shadow-lg flex-shrink-0 transition-transform duration-300 hover:scale-105"
             fallbackClassName="bg-black/40 text-foreground"
           />
           <div className="min-w-0">
             <h3 className="font-semibold text-[16px] text-foreground tracking-tight truncate flex items-center gap-2">
-              {conversation?.sender_name
-                ? conversation.sender_name
-                : contact === 'Unknown Sender'
-                  ? contact
-                  : `+${contact}`}
+              {displayName}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleEditNickname}
+                className="h-6 w-6 ml-1 opacity-50 hover:opacity-100 flex-shrink-0"
+              >
+                <Pencil className="h-3 w-3" />
+              </Button>
             </h3>
             <div className="flex items-center gap-2 mt-0.5 truncate">
               <span className="text-xs text-muted-foreground font-medium truncate">
@@ -516,20 +548,16 @@ export function ChatWindow({ device, contact, conversation, contacts, onBack, is
               <div className="py-8 flex flex-col items-center border-b border-white/10">
                 <SmartAvatar
                   jid={contact}
-                  name={conversation?.sender_name}
+                  name={displayName}
                   instanceKey={device?.instance_key}
-                  contactRecord={contacts?.find((c: any) => c.remote_jid === contact)}
+                  contactRecord={contactRecord}
                   className="h-32 w-32 mb-5 border border-white/10 shadow-2xl text-4xl"
                   fallbackClassName="text-3xl bg-black/40 text-foreground"
                 />
                 <h3 className="font-bold text-xl text-foreground tracking-tight text-center">
-                  {conversation?.sender_name
-                    ? conversation.sender_name
-                    : contact === 'Unknown Sender'
-                      ? contact
-                      : `+${contact}`}
+                  {displayName}
                 </h3>
-                {conversation?.sender_name && contact !== 'Unknown Sender' && (
+                {displayName !== `+${contact}` && contact !== 'Unknown Sender' && (
                   <p className="text-muted-foreground mt-1 text-sm">+{contact}</p>
                 )}
                 <p className="text-muted-foreground mt-1 text-sm">Via {device.name}</p>
@@ -595,7 +623,12 @@ export function ChatWindow({ device, contact, conversation, contacts, onBack, is
                 {!isMe && (
                   <SmartAvatar
                     jid={msg.remote_sender}
-                    name={msg.sender_name}
+                    name={(() => {
+                      const msgContactRecord = contacts?.find(
+                        (c: any) => c.remote_jid === msg.remote_sender,
+                      )
+                      return msgContactRecord?.nickname || msg.sender_name || msgContactRecord?.name
+                    })()}
                     instanceKey={device?.instance_key}
                     contactRecord={contacts?.find((c: any) => c.remote_jid === msg.remote_sender)}
                     className="h-7 w-7 border border-white/10 shadow-sm flex-shrink-0 mb-1 hidden sm:block"
@@ -614,11 +647,20 @@ export function ChatWindow({ device, contact, conversation, contacts, onBack, is
                       <span className="text-primary-foreground/80">{user?.name || 'Você'}</span>
                     ) : (
                       <span className="text-secondary-foreground/80">
-                        {msg.sender_name
-                          ? msg.sender_name
-                          : msg.remote_sender
-                            ? `+${msg.remote_sender}`
-                            : 'Unknown Sender'}
+                        {(() => {
+                          const msgContactRecord = contacts?.find(
+                            (c: any) => c.remote_jid === msg.remote_sender,
+                          )
+                          return msgContactRecord?.nickname
+                            ? msgContactRecord.nickname
+                            : msg.sender_name && msg.sender_name !== 'Unknown Sender'
+                              ? msg.sender_name
+                              : msgContactRecord?.name && msgContactRecord.name !== 'Unknown Sender'
+                                ? msgContactRecord.name
+                                : msg.remote_sender === 'Unknown Sender'
+                                  ? msg.remote_sender
+                                  : `+${msg.remote_sender}`
+                        })()}
                       </span>
                     )}
                   </div>
@@ -824,6 +866,42 @@ export function ChatWindow({ device, contact, conversation, contacts, onBack, is
                 <Smile className="h-5 w-5" />
               </Button>
             </div>
+            <Dialog open={isNicknameOpen} onOpenChange={setIsNicknameOpen}>
+              <DialogContent className="sm:max-w-[425px] bg-zinc-950 border-white/10">
+                <DialogHeader>
+                  <DialogTitle>Editar Apelido do Contato</DialogTitle>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="nickname">Apelido (visível apenas para você)</Label>
+                    <Input
+                      id="nickname"
+                      value={nicknameInput}
+                      onChange={(e) => setNicknameInput(e.target.value)}
+                      placeholder="Ex: Cliente VIP, Fornecedor..."
+                      className="bg-black/40 border-white/10"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          handleSaveNickname()
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsNicknameOpen(false)}
+                    className="bg-transparent border-white/10 hover:bg-white/5"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button onClick={handleSaveNickname}>Salvar</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
             <Dialog open={isScheduleOpen} onOpenChange={setIsScheduleOpen}>
               <DialogTrigger asChild>
                 <Button
