@@ -34,6 +34,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import useAppStore from '@/stores/useAppStore'
 import { useToast } from '@/hooks/use-toast'
+import { SignatureManagerDialog } from '@/components/SignatureManagerDialog'
 
 export default function Devices() {
   const { devices, syncDevice } = useAppStore()
@@ -61,6 +62,7 @@ export default function Devices() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col sm:flex-row items-center justify-end gap-4">
+        <SignatureManagerDialog />
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button className="gap-2">
