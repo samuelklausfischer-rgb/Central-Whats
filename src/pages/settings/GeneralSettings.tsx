@@ -5,14 +5,6 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { getDevices, updateDevice } from '@/services/devices'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/hooks/use-auth'
 import pb from '@/lib/pocketbase/client'
@@ -20,49 +12,13 @@ import pb from '@/lib/pocketbase/client'
 export default function GeneralSettings() {
   const { user } = useAuth()
   const [localSignature, setLocalSignature] = useState('')
-  const [devices, setDevices] = useState<any[]>([])
-  const [selectedDeviceId, setSelectedDeviceId] = useState<string>('')
-  const [deviceSignature, setDeviceSignature] = useState('')
   const { toast } = useToast()
-
-  useEffect(() => {
-    getDevices().then(setDevices).catch(console.error)
-  }, [])
-
-  useEffect(() => {
-    if (selectedDeviceId) {
-      const device = devices.find((d) => d.id === selectedDeviceId)
-      setDeviceSignature(device?.signature || '')
-    } else {
-      setDeviceSignature('')
-    }
-  }, [selectedDeviceId, devices])
 
   useEffect(() => {
     if (user?.signature) {
       setLocalSignature(user.signature)
     }
   }, [user])
-
-  const handleSaveDeviceSignature = async () => {
-    if (!selectedDeviceId) return
-    try {
-      await updateDevice(selectedDeviceId, { signature: deviceSignature })
-      setDevices((prev) =>
-        prev.map((d) => (d.id === selectedDeviceId ? { ...d, signature: deviceSignature } : d)),
-      )
-      toast({
-        title: 'Assinatura Atualizada',
-        description: 'A assinatura do dispositivo foi salva com sucesso.',
-      })
-    } catch (e) {
-      toast({
-        title: 'Erro',
-        description: 'Não foi possível salvar a assinatura do dispositivo.',
-        variant: 'destructive',
-      })
-    }
-  }
 
   const handleSaveProfile = async () => {
     if (!user) return
@@ -113,45 +69,6 @@ export default function GeneralSettings() {
             </p>
           </div>
           <Button onClick={handleSaveProfile}>Salvar Alterações</Button>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Assinaturas por Dispositivo</CardTitle>
-          <CardDescription>
-            Configure assinaturas de mensagens específicas para cada instância do WhatsApp.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4 max-w-2xl">
-          <div className="space-y-2">
-            <Label htmlFor="device-select">Instância do WhatsApp</Label>
-            <Select value={selectedDeviceId} onValueChange={setSelectedDeviceId}>
-              <SelectTrigger id="device-select">
-                <SelectValue placeholder="Selecione um dispositivo..." />
-              </SelectTrigger>
-              <SelectContent>
-                {devices.map((device) => (
-                  <SelectItem key={device.id} value={device.id}>
-                    {device.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="deviceSignature">Assinatura da Instância</Label>
-            <Textarea
-              id="deviceSignature"
-              placeholder="Digite a assinatura para este dispositivo..."
-              value={deviceSignature}
-              onChange={(e) => setDeviceSignature(e.target.value)}
-              disabled={!selectedDeviceId}
-            />
-          </div>
-          <Button onClick={handleSaveDeviceSignature} disabled={!selectedDeviceId}>
-            Salvar Assinatura
-          </Button>
         </CardContent>
       </Card>
 

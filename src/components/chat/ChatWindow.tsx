@@ -14,18 +14,6 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-  DialogClose,
-} from '@/components/ui/dialog'
-import { Label } from '@/components/ui/label'
-import { Settings } from 'lucide-react'
-import { updateDevice } from '@/services/devices'
 import { useAuth } from '@/hooks/use-auth'
 import { sendMessage } from '@/services/messages'
 import pb from '@/lib/pocketbase/client'
@@ -39,24 +27,6 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
 
   const [msgText, setMsgText] = useState('')
   const scrollRef = useRef<HTMLDivElement>(null)
-
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
-  const [deviceSignature, setDeviceSignature] = useState(device?.signature || '')
-
-  useEffect(() => {
-    if (device) setDeviceSignature(device.signature || '')
-  }, [device])
-
-  const handleSaveSignature = async () => {
-    if (!device) return
-    try {
-      await updateDevice(device.id, { signature: deviceSignature })
-      toast({ title: 'Assinatura atualizada com sucesso!' })
-      setIsSettingsOpen(false)
-    } catch (error) {
-      toast({ title: 'Erro ao atualizar assinatura', variant: 'destructive' })
-    }
-  }
 
   const messages = conversation?.messages || []
 
@@ -149,53 +119,6 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
               <span className="text-xs text-muted-foreground font-medium truncate">
                 Via {device.name}
               </span>
-              <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-                <DialogTrigger asChild>
-                  <button
-                    className="text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded hover:bg-white/10"
-                    title="Configurações do Dispositivo"
-                  >
-                    <Settings className="h-3.5 w-3.5" />
-                  </button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px] bg-zinc-950/95 border-white/10 text-foreground backdrop-blur-xl">
-                  <DialogHeader>
-                    <DialogTitle>Configurações: {device.name}</DialogTitle>
-                  </DialogHeader>
-                  <div className="py-4">
-                    <Label htmlFor="signature" className="text-sm font-medium mb-2 block">
-                      Mensagem Padrão (Assinatura)
-                    </Label>
-                    <textarea
-                      id="signature"
-                      className="w-full flex min-h-[120px] rounded-md border border-white/10 bg-black/40 px-3 py-2 text-[14px] placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500/50 resize-none"
-                      placeholder="Ex: Atenciosamente, Equipe de Vendas..."
-                      value={deviceSignature}
-                      onChange={(e) => setDeviceSignature(e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Esta mensagem será adicionada automaticamente ao final de todos os seus envios
-                      por este dispositivo.
-                    </p>
-                  </div>
-                  <DialogFooter>
-                    <DialogClose asChild>
-                      <Button
-                        variant="outline"
-                        className="border-white/10 bg-white/5 hover:bg-white/10 text-foreground"
-                      >
-                        Cancelar
-                      </Button>
-                    </DialogClose>
-                    <Button
-                      onClick={handleSaveSignature}
-                      className="bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/25"
-                    >
-                      Salvar
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
             </div>
           </div>
         </div>
