@@ -63,12 +63,7 @@ routerAdd('POST', '/backend/v1/webhooks/evolution/messages-upsert', (e) => {
       logContext.remoteJid = key.remoteJid || 'unknown'
       logContext.remoteJidAlt = key.remoteJidAlt || 'unknown'
 
-      if (key.fromMe === true) {
-        logContext.status = 'discarded'
-        logContext.reason = 'fromMe is true'
-        writeLog('info', 'Evolution webhook discarded')
-        return e.json(200, { status: 'ignored', reason: 'fromMe is true' })
-      }
+      const isFromMe = key.fromMe === true
 
       const rawJid = key.remoteJidAlt || key.remoteJid || ''
       const remoteSender = rawJid
@@ -111,19 +106,41 @@ routerAdd('POST', '/backend/v1/webhooks/evolution/messages-upsert', (e) => {
       }
 
       const pushName = messageData.pushName || ''
+      const externalId = key.id || ''
 
       const messagesCol = $app.findCollectionByNameOrId('messages')
-      const newMsg = new Record(messagesCol)
-      newMsg.set('content', content)
-      newMsg.set('device_id', device.id)
-      newMsg.set('remote_sender', remoteSender)
-      newMsg.set('sender_name', pushName)
-      newMsg.set('direction', 'inbound')
-      newMsg.set('is_read', false)
-      $app.save(newMsg)
+      let existingMsg = null
 
-      device.set('unread_count', (device.getInt('unread_count') || 0) + 1)
-      $app.save(device)
+      if (externalId) {
+        try {
+          existingMsg = $app.findFirstRecordByData('messages', 'external_id', externalId)
+        } catch (_) {
+          existingMsg = null
+        }
+      }
+
+      if (existingMsg) {
+        existingMsg.set('content', content)
+        existingMsg.set('sender_name', pushName || existingMsg.get('sender_name'))
+        $app.save(existingMsg)
+      } else {
+        const newMsg = new Record(messagesCol)
+        newMsg.set('content', content)
+        newMsg.set('device_id', device.id)
+        newMsg.set('remote_sender', remoteSender)
+        newMsg.set('sender_name', pushName)
+        newMsg.set('direction', isFromMe ? 'outbound' : 'inbound')
+        newMsg.set('is_read', isFromMe ? true : false)
+        if (externalId) {
+          newMsg.set('external_id', externalId)
+        }
+        $app.save(newMsg)
+
+        if (!isFromMe) {
+          device.set('unread_count', (device.getInt('unread_count') || 0) + 1)
+          $app.save(device)
+        }
+      }
 
       logContext.status = 'processed'
       logContext.reason = 'success'

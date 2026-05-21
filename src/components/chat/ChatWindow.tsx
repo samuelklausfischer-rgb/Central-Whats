@@ -58,7 +58,9 @@ const formatInline = (text: string, isMe: boolean): React.ReactNode => {
           target="_blank"
           rel="noopener noreferrer"
           className={`hover:underline break-all font-medium transition-colors ${
-            isMe ? 'text-blue-100 hover:text-white' : 'text-blue-400 hover:text-blue-300'
+            isMe
+              ? 'text-primary-foreground/90 hover:text-primary-foreground'
+              : 'text-secondary-foreground/90 hover:text-secondary-foreground'
           }`}
         >
           {part}
@@ -172,8 +174,8 @@ const renderMessage = (content: string, isMe: boolean) => {
               key={`quote-${j}`}
               className={`border-l-4 pl-3 py-1 my-2 italic rounded-r ${
                 isMe
-                  ? 'border-white/40 bg-white/10 text-white'
-                  : 'border-blue-500/50 bg-blue-500/10 text-foreground/90'
+                  ? 'border-primary-foreground/40 bg-primary-foreground/10 text-primary-foreground'
+                  : 'border-secondary-foreground/40 bg-secondary-foreground/10 text-secondary-foreground'
               }`}
             >
               {formatInline(isQuote[1], isMe)}
@@ -593,15 +595,15 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
               <div
                 className={`max-w-[85%] sm:max-w-[75%] rounded-2xl px-4 py-3 shadow-md relative group transition-all duration-300 ${
                   isMe
-                    ? 'bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-br-sm border border-blue-500/30 shadow-blue-900/20'
-                    : 'bg-zinc-900/80 text-foreground rounded-bl-sm border border-white/5 backdrop-blur-xl shadow-black/40'
+                    ? 'bg-primary text-primary-foreground rounded-br-sm shadow-blue-900/20'
+                    : 'bg-secondary text-secondary-foreground rounded-bl-sm shadow-black/40'
                 }`}
               >
                 <div className="text-xs font-bold mb-1.5 opacity-90 flex items-center justify-between">
                   {isMe ? (
-                    <span className="text-blue-200">{user?.name || 'Você'}</span>
+                    <span className="text-primary-foreground/80">{user?.name || 'Você'}</span>
                   ) : (
-                    <span className="text-blue-400">
+                    <span className="text-secondary-foreground/80">
                       {msg.sender_name
                         ? msg.sender_name
                         : msg.remote_sender
@@ -634,10 +636,10 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
                           href={url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className={`flex items-center gap-2 p-2.5 rounded-md hover:bg-black/20 transition-colors text-sm border ${isMe ? 'border-white/20 bg-black/10' : 'border-white/10 bg-black/20'}`}
+                          className={`flex items-center gap-2 p-2.5 rounded-md hover:opacity-80 transition-colors text-sm border ${isMe ? 'border-primary-foreground/20 bg-primary-foreground/10' : 'border-secondary-foreground/20 bg-secondary-foreground/10'}`}
                         >
                           <FileIcon
-                            className={`h-4 w-4 flex-shrink-0 ${isMe ? 'text-white' : 'text-blue-400'}`}
+                            className={`h-4 w-4 flex-shrink-0 ${isMe ? 'text-primary-foreground' : 'text-secondary-foreground'}`}
                           />
                           <span className="truncate max-w-[150px]" title={filename}>
                             {filename}
@@ -655,7 +657,7 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
                 )}
                 <div
                   className={`text-[10px] mt-1.5 font-medium flex items-center justify-end ${
-                    isMe ? 'text-blue-100/70' : 'text-muted-foreground'
+                    isMe ? 'text-primary-foreground/70' : 'text-secondary-foreground/70'
                   }`}
                 >
                   {timestamp}

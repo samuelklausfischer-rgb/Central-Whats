@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-21T19:06:26.592Z",
+  "generatedAt": "2026-05-21T19:11:37.291Z",
   "collections": [
     {
       "name": "users",
@@ -204,9 +204,17 @@
           "type": "text",
           "required": false,
           "system": false
+        },
+        {
+          "name": "external_id",
+          "type": "text",
+          "required": false,
+          "system": false
         }
       ],
-      "indexes": []
+      "indexes": [
+        "CREATE UNIQUE INDEX `idx_messages_external_id` ON `messages` (external_id) WHERE external_id != ''"
+      ]
     },
     {
       "name": "notes",
