@@ -145,7 +145,7 @@ export default function AdminPage() {
     <div className="flex flex-col gap-6 p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Administração</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Gestão de Equipe</h1>
           <p className="text-muted-foreground">
             Gerencie usuários e permissões de acesso aos aparelhos.
           </p>

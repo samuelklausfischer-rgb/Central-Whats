@@ -73,12 +73,12 @@ export function AppSidebar() {
               <SidebarMenuButton
                 asChild
                 isActive={location.pathname === '/admin'}
-                tooltip="Administração"
+                tooltip="Gestão de Equipe"
                 className="py-5"
               >
                 <Link to="/admin" className="flex items-center gap-3">
                   <ShieldAlert className="h-5 w-5" />
-                  <span className="text-sm">Administração</span>
+                  <span className="text-sm">Gestão de Equipe</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
