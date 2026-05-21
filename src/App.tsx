@@ -13,6 +13,7 @@ import Layout from './components/Layout'
 import { AppProvider } from './stores/useAppStore'
 import SettingsLayout from './pages/settings/SettingsLayout'
 import GeneralSettings from './pages/settings/GeneralSettings'
+import LabelsSettings from './pages/settings/LabelsSettings'
 import Login from './pages/Login'
 import { AuthProvider, useAuth } from './hooks/use-auth'
 
@@ -47,6 +48,7 @@ const App = () => (
                 <Route path="/settings" element={<SettingsLayout />}>
                   <Route path="devices" element={<Devices />} />
                   <Route path="general" element={<GeneralSettings />} />
+                  <Route path="labels" element={<LabelsSettings />} />
                   <Route index element={<Navigate to="general" replace />} />
                 </Route>
               </Route>

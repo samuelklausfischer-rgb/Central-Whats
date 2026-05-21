@@ -1,6 +1,9 @@
+import { useState, useEffect } from 'react'
 import { Search, ChevronDown, MonitorSmartphone } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { getContactTags } from '@/services/contact_tags'
+import { useRealtime } from '@/hooks/use-realtime'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -18,6 +21,29 @@ export function ChatList({
   onSelectContact,
 }: any) {
   const selectedDevice = devices.find((d: any) => d.id === selectedDeviceId)
+
+  const [deviceTags, setDeviceTags] = useState<any[]>([])
+
+  const loadDeviceTags = async () => {
+    if (selectedDeviceId) {
+      try {
+        const tags = await getContactTags(selectedDeviceId)
+        setDeviceTags(tags)
+      } catch {
+        /* intentionally ignored */
+      }
+    } else {
+      setDeviceTags([])
+    }
+  }
+
+  useEffect(() => {
+    loadDeviceTags()
+  }, [selectedDeviceId])
+
+  useRealtime('contact_tags', () => {
+    loadDeviceTags()
+  })
 
   return (
     <div className="flex flex-col h-full bg-black/20 backdrop-blur-md border-r border-white/10 w-full md:w-[320px] lg:w-[380px] flex-shrink-0">
@@ -188,6 +214,30 @@ export function ChatList({
                       </div>
                     )}
                   </div>
+
+                  {(() => {
+                    const contactLabels = deviceTags.filter(
+                      (t: any) => t.remote_sender === conv.remote_sender && t.expand?.label_id,
+                    )
+                    if (contactLabels.length === 0) return null
+                    return (
+                      <div className="flex flex-wrap gap-1 mt-1.5">
+                        {contactLabels.slice(0, 3).map((t: any) => (
+                          <div
+                            key={t.id}
+                            className="w-2.5 h-2.5 rounded-full shadow-sm border border-black/20"
+                            style={{ backgroundColor: t.expand.label_id.color }}
+                            title={t.expand.label_id.name}
+                          />
+                        ))}
+                        {contactLabels.length > 3 && (
+                          <span className="text-[9px] text-muted-foreground flex items-center">
+                            +{contactLabels.length - 3}
+                          </span>
+                        )}
+                      </div>
+                    )
+                  })()}
                 </div>
               </button>
             )

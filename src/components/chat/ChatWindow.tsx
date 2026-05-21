@@ -11,12 +11,16 @@ import {
   Info,
   User,
   Zap,
+  Tags,
+  Check,
 } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { getTriggers } from '@/services/message_triggers'
+import { getLabels } from '@/services/labels'
+import { getContactTags, toggleContactTag } from '@/services/contact_tags'
 import { useRealtime } from '@/hooks/use-realtime'
 import { useAuth } from '@/hooks/use-auth'
 import { sendMessage } from '@/services/messages'
@@ -193,18 +197,48 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
   const [searchTrigger, setSearchTrigger] = useState('')
   const [isTriggerOpen, setIsTriggerOpen] = useState(false)
 
+  const [labels, setLabels] = useState<any[]>([])
+  const [contactTags, setContactTags] = useState<any[]>([])
+  const [isLabelsOpen, setIsLabelsOpen] = useState(false)
+
   const messages = conversation?.messages || []
 
   useEffect(() => {
     getTriggers()
       .then(setTriggers)
       .catch(() => {})
+    getLabels()
+      .then(setLabels)
+      .catch(() => {})
   }, [])
+
+  const loadContactTags = async () => {
+    if (device && contact) {
+      try {
+        const tags = await getContactTags(device.id)
+        setContactTags(tags.filter((t: any) => t.remote_sender === contact))
+      } catch {
+        /* intentionally ignored */
+      }
+    }
+  }
+
+  useEffect(() => {
+    loadContactTags()
+  }, [device?.id, contact])
 
   useRealtime('message_triggers', () => {
     getTriggers()
       .then(setTriggers)
       .catch(() => {})
+  })
+  useRealtime('labels', () => {
+    getLabels()
+      .then(setLabels)
+      .catch(() => {})
+  })
+  useRealtime('contact_tags', () => {
+    loadContactTags()
   })
 
   useEffect(() => {
@@ -257,6 +291,15 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
     setSearchTrigger('')
   }
 
+  const handleToggleLabel = async (labelId: string) => {
+    if (!device || !contact) return
+    try {
+      await toggleContactTag(device.id, contact, labelId)
+    } catch (err) {
+      toast({ title: 'Erro ao alterar etiqueta', variant: 'destructive' })
+    }
+  }
+
   const filteredTriggers = triggers.filter((t) =>
     t.title.toLowerCase().includes(searchTrigger.toLowerCase()),
   )
@@ -299,7 +342,7 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0">
-            <h3 className="font-semibold text-[16px] text-foreground tracking-tight truncate">
+            <h3 className="font-semibold text-[16px] text-foreground tracking-tight truncate flex items-center gap-2">
               +{contact}
             </h3>
             <div className="flex items-center gap-2 mt-0.5 truncate">
@@ -310,46 +353,115 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
           </div>
         </div>
 
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="rounded-full text-foreground/80 hover:text-foreground hover:bg-white/10 flex-shrink-0 ml-2"
+        <div className="flex items-center gap-1">
+          <Popover open={isLabelsOpen} onOpenChange={setIsLabelsOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-foreground/80 hover:text-foreground hover:bg-white/10 rounded-full flex-shrink-0 relative"
+              >
+                <Tags className="h-5 w-5" />
+                {contactTags.length > 0 && (
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-blue-500 rounded-full border border-zinc-950" />
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="end"
+              className="w-56 p-2 bg-zinc-950/95 border-white/10 backdrop-blur-xl"
             >
-              <MoreVertical className="h-5 w-5" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent className="bg-zinc-950/95 border-white/10 backdrop-blur-xl">
-            <SheetHeader>
-              <SheetTitle className="text-foreground">Info do Contato</SheetTitle>
-            </SheetHeader>
-            <div className="py-8 flex flex-col items-center border-b border-white/10">
-              <Avatar className="h-32 w-32 mb-5 border border-white/10 shadow-2xl">
-                <AvatarFallback className="text-3xl bg-black/40 text-foreground">
-                  <User className="h-12 w-12 opacity-50" />
-                </AvatarFallback>
-              </Avatar>
-              <h3 className="font-bold text-xl text-foreground tracking-tight">+{contact}</h3>
-              <p className="text-muted-foreground mt-1 text-sm">Via {device.name}</p>
-            </div>
-            <div className="py-6 space-y-3">
+              <div className="mb-2 px-2 pb-2 pt-1 border-b border-white/10 text-xs font-semibold text-muted-foreground">
+                Etiquetas do Contato
+              </div>
+              {labels.length === 0 ? (
+                <div className="text-xs text-center text-muted-foreground p-2">
+                  Nenhuma etiqueta cadastrada.
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {labels.map((label) => {
+                    const isSelected = contactTags.some((t: any) => t.label_id === label.id)
+                    return (
+                      <button
+                        key={label.id}
+                        onClick={() => handleToggleLabel(label.id)}
+                        className="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded hover:bg-white/10 transition-colors"
+                      >
+                        <div
+                          className="w-3 h-3 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: label.color }}
+                        />
+                        <span className="flex-1 text-left truncate">{label.name}</span>
+                        {isSelected && <Check className="w-4 h-4 text-white" />}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </PopoverContent>
+          </Popover>
+          <Sheet>
+            <SheetTrigger asChild>
               <Button
-                className="w-full justify-start h-12 bg-white/5 hover:bg-white/10 border-white/5 text-foreground transition-all"
-                variant="outline"
-                onClick={handleAddTask}
+                variant="ghost"
+                size="icon"
+                className="rounded-full text-foreground/80 hover:text-foreground hover:bg-white/10 flex-shrink-0 ml-1"
               >
-                <ListTodo className="mr-3 h-5 w-5 text-blue-400" /> Criar Tarefa para Contato
+                <MoreVertical className="h-5 w-5" />
               </Button>
-              <Button
-                className="w-full justify-start h-12 bg-white/5 hover:bg-white/10 border-white/5 text-foreground transition-all"
-                variant="outline"
-              >
-                <StickyNote className="mr-3 h-5 w-5 text-purple-400" /> Adicionar Anotação
-              </Button>
-            </div>
-          </SheetContent>
-        </Sheet>
+            </SheetTrigger>
+            <SheetContent className="bg-zinc-950/95 border-white/10 backdrop-blur-xl">
+              <SheetHeader>
+                <SheetTitle className="text-foreground">Info do Contato</SheetTitle>
+              </SheetHeader>
+              <div className="py-8 flex flex-col items-center border-b border-white/10">
+                <Avatar className="h-32 w-32 mb-5 border border-white/10 shadow-2xl">
+                  <AvatarFallback className="text-3xl bg-black/40 text-foreground">
+                    <User className="h-12 w-12 opacity-50" />
+                  </AvatarFallback>
+                </Avatar>
+                <h3 className="font-bold text-xl text-foreground tracking-tight">+{contact}</h3>
+                <p className="text-muted-foreground mt-1 text-sm">Via {device.name}</p>
+
+                {contactTags.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-4 justify-center">
+                    {contactTags.map(
+                      (tag) =>
+                        tag.expand?.label_id && (
+                          <div
+                            key={tag.id}
+                            className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-white/10 text-xs"
+                          >
+                            <div
+                              className="w-2 h-2 rounded-full"
+                              style={{ backgroundColor: tag.expand.label_id.color }}
+                            />
+                            {tag.expand.label_id.name}
+                          </div>
+                        ),
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="py-6 space-y-3">
+                <Button
+                  className="w-full justify-start h-12 bg-white/5 hover:bg-white/10 border-white/5 text-foreground transition-all"
+                  variant="outline"
+                  onClick={handleAddTask}
+                >
+                  <ListTodo className="mr-3 h-5 w-5 text-blue-400" /> Criar Tarefa para Contato
+                </Button>
+                <Button
+                  className="w-full justify-start h-12 bg-white/5 hover:bg-white/10 border-white/5 text-foreground transition-all"
+                  variant="outline"
+                >
+                  <StickyNote className="mr-3 h-5 w-5 text-purple-400" /> Adicionar Anotação
+                </Button>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
       </div>
 
       <div
