@@ -14,18 +14,44 @@ migrate(
       )
     }
 
+    // Ensure email is not strictly required, to prevent blocking users without email
+    const emailField = collection.fields.getByName('email')
+    if (emailField) {
+      emailField.required = false
+    }
+
+    // Save fields first so the 'username' column exists in SQLite
+    app.save(collection)
+
+    // Give unique values to empty usernames to prevent unique constraint failures
+    app
+      .db()
+      .newQuery(`
+    UPDATE _pb_users_auth_ 
+    SET username = id 
+    WHERE username = '' OR username IS NULL
+  `)
+      .execute()
+
+    // Deduplicate before adding unique index
+    app
+      .db()
+      .newQuery(`
+    DELETE FROM _pb_users_auth_ WHERE id NOT IN (
+      SELECT MIN(id) FROM _pb_users_auth_ GROUP BY username
+    ) AND username IS NOT NULL
+  `)
+      .execute()
+
+    // Add the unique index required for identity fields
+    collection.addIndex('idx_users_username', true, 'username', '')
+
     // Ensure username is accepted as an identity field
     if (collection.passwordAuth) {
       const identityFields = []
       if (collection.fields.getByName('email')) identityFields.push('email')
       if (collection.fields.getByName('username')) identityFields.push('username')
       collection.passwordAuth.identityFields = identityFields
-    }
-
-    // Ensure email is not strictly required, to prevent blocking users without email
-    const emailField = collection.fields.getByName('email')
-    if (emailField) {
-      emailField.required = false
     }
 
     app.save(collection)
