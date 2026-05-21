@@ -11,6 +11,8 @@ onRecordAfterCreateSuccess((e) => {
   const apikey = $secrets.get('EVOLUTION_API_KEY') || ''
 
   let instanceKey = 'Celular teste'
+  let signature = ''
+
   const deviceId = record.getString('device_id')
   if (deviceId) {
     try {
@@ -19,12 +21,38 @@ onRecordAfterCreateSuccess((e) => {
       if (dKey) {
         instanceKey = dKey
       }
+      signature = device.getString('signature') || ''
     } catch (_) {}
+  }
+
+  if (!signature) {
+    const senderId = record.getString('sender_id')
+    if (senderId) {
+      try {
+        const user = $app.findRecordById('users', senderId)
+        signature = user.getString('signature') || ''
+      } catch (_) {}
+    }
+  }
+
+  let textContent = record.getString('content') || '[Anexo]'
+
+  if (signature && signature.trim() && textContent !== '[Anexo]') {
+    textContent = signature.trim() + '\n\n' + textContent
+
+    try {
+      record.set('content', textContent)
+      $app.saveNoValidate(record)
+    } catch (updateErr) {
+      $app
+        .logger()
+        .error('Failed to update message record with signature', 'error', updateErr.message)
+    }
   }
 
   const payload = {
     number: record.getString('remote_sender'),
-    text: record.getString('content') || '[Anexo]',
+    text: textContent,
   }
 
   try {

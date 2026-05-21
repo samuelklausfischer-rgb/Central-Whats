@@ -282,8 +282,7 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
     e.preventDefault()
     if ((!msgText.trim() && attachments.length === 0) || !device || !user || !contact) return
 
-    const userSig = user.signature && msgText.trim() ? `${user.signature.trim()}\n` : ''
-    const content = msgText.trim() ? userSig + msgText.trim() : '[Anexo]'
+    const content = msgText.trim() ? msgText.trim() : '[Anexo]'
 
     try {
       await sendMessage({
@@ -312,8 +311,7 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
     )
       return
 
-    const userSig = user.signature && msgText.trim() ? `${user.signature.trim()}\n` : ''
-    const content = msgText.trim() ? userSig + msgText.trim() : '[Anexo]'
+    const content = msgText.trim() ? msgText.trim() : '[Anexo]'
 
     try {
       await createScheduledMessage({
@@ -667,13 +665,15 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
       </div>
 
       <div className="flex flex-col bg-zinc-950/60 backdrop-blur-2xl border-t border-white/5 shadow-[0_-4px_20px_rgba(0,0,0,0.2)] flex-shrink-0 p-4 z-10 relative">
-        {user?.signature && (
+        {(device?.signature || user?.signature) && (
           <div className="px-2 pb-3 text-[12px] text-muted-foreground flex flex-col gap-1.5">
             <div className="flex items-center gap-1.5">
               <Info className="h-3.5 w-3.5 text-purple-400" />
               <span>
-                Assinatura:{' '}
-                <span className="font-semibold text-foreground/80 italic">{user.signature}</span>
+                Assinatura automática:{' '}
+                <span className="font-semibold text-foreground/80 italic">
+                  {device?.signature || user?.signature}
+                </span>
               </span>
             </div>
           </div>
