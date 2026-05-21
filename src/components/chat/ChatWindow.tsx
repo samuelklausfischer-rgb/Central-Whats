@@ -282,9 +282,8 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
     e.preventDefault()
     if ((!msgText.trim() && attachments.length === 0) || !device || !user || !contact) return
 
-    const userSig = user.signature && msgText.trim() ? `*${user.signature}*\n` : ''
     const devSig = device.signature && msgText.trim() ? `\n\n${device.signature}` : ''
-    const content = msgText.trim() ? userSig + msgText + devSig : '[Anexo]'
+    const content = msgText.trim() ? msgText + devSig : '[Anexo]'
 
     try {
       await sendMessage({
@@ -313,9 +312,8 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
     )
       return
 
-    const userSig = user.signature && msgText.trim() ? `*${user.signature}*\n` : ''
     const devSig = device.signature && msgText.trim() ? `\n\n${device.signature}` : ''
-    const content = msgText.trim() ? userSig + msgText + devSig : '[Anexo]'
+    const content = msgText.trim() ? msgText + devSig : '[Anexo]'
 
     try {
       await createScheduledMessage({
@@ -669,30 +667,15 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
       </div>
 
       <div className="flex flex-col bg-zinc-950/60 backdrop-blur-2xl border-t border-white/5 shadow-[0_-4px_20px_rgba(0,0,0,0.2)] flex-shrink-0 p-4 z-10 relative">
-        {(user?.signature || device?.signature) && (
+        {device?.signature && (
           <div className="px-2 pb-3 text-[12px] text-muted-foreground flex flex-col gap-1.5">
-            {user?.signature && (
-              <div className="flex items-center gap-1.5">
-                <Info className="h-3.5 w-3.5 text-blue-400" />
-                <span>
-                  Assinatura do usuário:{' '}
-                  <span className="font-semibold text-foreground/80 italic">
-                    *{user.signature}*
-                  </span>
-                </span>
-              </div>
-            )}
-            {device?.signature && (
-              <div className="flex items-center gap-1.5">
-                <Info className="h-3.5 w-3.5 text-purple-400" />
-                <span>
-                  Assinatura do dispositivo:{' '}
-                  <span className="font-semibold text-foreground/80 italic">
-                    {device.signature}
-                  </span>
-                </span>
-              </div>
-            )}
+            <div className="flex items-center gap-1.5">
+              <Info className="h-3.5 w-3.5 text-purple-400" />
+              <span>
+                Assinatura do dispositivo:{' '}
+                <span className="font-semibold text-foreground/80 italic">{device.signature}</span>
+              </span>
+            </div>
           </div>
         )}
         <form onSubmit={handleSend} className="flex flex-col gap-3 max-w-4xl mx-auto w-full">
