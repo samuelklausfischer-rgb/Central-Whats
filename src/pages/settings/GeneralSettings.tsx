@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/hooks/use-auth'
 import pb from '@/lib/pocketbase/client'
-import { Upload, X, MessageSquareSignature } from 'lucide-react'
+import { Upload, X, FileSignature } from 'lucide-react'
 import { SignatureManagerDialog } from '@/components/SignatureManagerDialog'
 
 export default function GeneralSettings() {
@@ -222,7 +222,7 @@ export default function GeneralSettings() {
             className="w-full sm:w-auto"
             variant="outline"
           >
-            <MessageSquareSignature className="mr-2 h-4 w-4" />
+            <FileSignature className="mr-2 h-4 w-4" />
             Gerenciar Assinaturas
           </Button>
         </CardContent>
