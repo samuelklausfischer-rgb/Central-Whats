@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-21T14:44:17.526Z",
+  "generatedAt": "2026-05-21T15:15:36.357Z",
   "collections": [
     {
       "name": "users",
@@ -192,6 +192,12 @@
           "required": false,
           "system": false,
           "selectValues": ["inbound", "outbound"]
+        },
+        {
+          "name": "attachments",
+          "type": "file",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": []
@@ -448,6 +454,12 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "attachments",
+          "type": "file",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [

@@ -7,6 +7,7 @@ import {
   XCircle,
   AlertCircle,
   Smartphone,
+  Paperclip,
 } from 'lucide-react'
 
 import {
@@ -174,8 +175,16 @@ export default function ScheduledMessages() {
                           </div>
                         </TableCell>
                         <TableCell className="max-w-[250px]">
-                          <div className="truncate text-sm text-foreground/80" title={msg.content}>
-                            {msg.content}
+                          <div
+                            className="truncate text-sm text-foreground/80 flex items-center gap-1.5"
+                            title={msg.content}
+                          >
+                            {msg.attachments && msg.attachments.length > 0 && (
+                              <Paperclip className="h-3.5 w-3.5 flex-shrink-0 text-blue-400" />
+                            )}
+                            <span>
+                              {msg.content === '[Anexo]' ? 'Mensagem com Anexo(s)' : msg.content}
+                            </span>
                           </div>
                         </TableCell>
                         <TableCell className="text-sm whitespace-nowrap">

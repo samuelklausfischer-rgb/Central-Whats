@@ -14,6 +14,10 @@ import {
   Tags,
   Check,
   CalendarClock,
+  X,
+  File as FileIcon,
+  Download,
+  Image as ImageIcon,
 } from 'lucide-react'
 import {
   Dialog,
@@ -214,6 +218,8 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
 
   const [isScheduleOpen, setIsScheduleOpen] = useState(false)
   const [scheduleDate, setScheduleDate] = useState('')
+  const [attachments, setAttachments] = useState<File[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const messages = conversation?.messages || []
 
@@ -272,29 +278,42 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!msgText.trim() || !device || !user || !contact) return
+    if ((!msgText.trim() && attachments.length === 0) || !device || !user || !contact) return
 
-    const userSig = user.signature ? `*${user.signature}*\n` : ''
-    const devSig = device.signature ? `\n\n${device.signature}` : ''
-    const content = userSig + msgText + devSig
+    const userSig = user.signature && msgText.trim() ? `*${user.signature}*\n` : ''
+    const devSig = device.signature && msgText.trim() ? `\n\n${device.signature}` : ''
+    const content = msgText.trim() ? userSig + msgText + devSig : '[Anexo]'
 
-    await sendMessage({
-      content,
-      device_id: device.id,
-      sender_id: user.id,
-      is_read: true,
-      remote_sender: contact,
-    })
-    setMsgText('')
+    try {
+      await sendMessage({
+        content,
+        device_id: device.id,
+        sender_id: user.id,
+        is_read: true,
+        remote_sender: contact,
+        attachments: attachments.length > 0 ? attachments : undefined,
+      })
+      setMsgText('')
+      setAttachments([])
+    } catch (err) {
+      toast({ title: 'Erro ao enviar mensagem', variant: 'destructive' })
+    }
   }
 
   const handleSchedule = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!msgText.trim() || !device || !user || !contact || !scheduleDate) return
+    if (
+      (!msgText.trim() && attachments.length === 0) ||
+      !device ||
+      !user ||
+      !contact ||
+      !scheduleDate
+    )
+      return
 
-    const userSig = user.signature ? `*${user.signature}*\n` : ''
-    const devSig = device.signature ? `\n\n${device.signature}` : ''
-    const content = userSig + msgText + devSig
+    const userSig = user.signature && msgText.trim() ? `*${user.signature}*\n` : ''
+    const devSig = device.signature && msgText.trim() ? `\n\n${device.signature}` : ''
+    const content = msgText.trim() ? userSig + msgText + devSig : '[Anexo]'
 
     try {
       await createScheduledMessage({
@@ -304,14 +323,41 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
         device_id: device.id,
         remote_sender: contact,
         user_id: user.id,
+        attachments: attachments.length > 0 ? attachments : undefined,
       })
       toast({ title: 'Mensagem agendada com sucesso' })
       setMsgText('')
+      setAttachments([])
       setIsScheduleOpen(false)
       setScheduleDate('')
     } catch (err) {
       toast({ title: 'Erro ao agendar mensagem', variant: 'destructive' })
     }
+  }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const newFiles = Array.from(e.target.files)
+      if (attachments.length + newFiles.length > 10) {
+        toast({ title: 'Máximo de 10 arquivos permitidos', variant: 'destructive' })
+        return
+      }
+
+      const validFiles = newFiles.filter((f) => {
+        if (f.size > 10485760) {
+          toast({ title: `Arquivo ${f.name} excede o limite de 10MB`, variant: 'destructive' })
+          return false
+        }
+        return true
+      })
+
+      setAttachments((prev) => [...prev, ...validFiles])
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  const removeAttachment = (index: number) => {
+    setAttachments((prev) => prev.filter((_, i) => i !== index))
   }
 
   const handleAddTask = () => {
@@ -523,9 +569,49 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
                     : 'bg-white/10 text-foreground rounded-bl-sm border border-white/5 backdrop-blur-md'
                 }`}
               >
-                <div className="text-[15px] leading-relaxed break-words">
-                  {renderMessage(msg.content, isMe)}
-                </div>
+                {msg.attachments && msg.attachments.length > 0 && (
+                  <div className="flex flex-col gap-2 mb-2">
+                    {msg.attachments.map((filename: string, idx: number) => {
+                      const url = `${import.meta.env.VITE_POCKETBASE_URL}/api/files/${msg.collectionId}/${msg.id}/${filename}`
+                      const isImage = /\.(jpeg|jpg|gif|png|webp)$/i.test(filename)
+                      if (isImage) {
+                        return (
+                          <a
+                            key={idx}
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block max-w-[240px] overflow-hidden rounded-md border border-white/10 hover:opacity-90 transition-opacity"
+                          >
+                            <img src={url} alt={filename} className="w-full h-auto object-cover" />
+                          </a>
+                        )
+                      }
+                      return (
+                        <a
+                          key={idx}
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`flex items-center gap-2 p-2.5 rounded-md hover:bg-black/20 transition-colors text-sm border ${isMe ? 'border-white/20 bg-black/10' : 'border-white/10 bg-black/20'}`}
+                        >
+                          <FileIcon
+                            className={`h-4 w-4 flex-shrink-0 ${isMe ? 'text-white' : 'text-blue-400'}`}
+                          />
+                          <span className="truncate max-w-[150px]" title={filename}>
+                            {filename}
+                          </span>
+                          <Download className="h-4 w-4 flex-shrink-0 ml-auto opacity-50" />
+                        </a>
+                      )
+                    })}
+                  </div>
+                )}
+                {msg.content !== '[Anexo]' && (
+                  <div className="text-[15px] leading-relaxed break-words">
+                    {renderMessage(msg.content, isMe)}
+                  </div>
+                )}
                 <div
                   className={`text-[10px] mt-1.5 font-medium flex items-center justify-end ${
                     isMe ? 'text-blue-100/70' : 'text-muted-foreground'
@@ -566,145 +652,205 @@ export function ChatWindow({ device, contact, conversation, onBack, isMobile }: 
             )}
           </div>
         )}
-        <form onSubmit={handleSend} className="flex items-end gap-3 max-w-4xl mx-auto w-full">
-          <Popover open={isTriggerOpen} onOpenChange={setIsTriggerOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="text-muted-foreground hover:text-blue-400 hover:bg-white/5 h-[48px] w-[48px] rounded-full flex-shrink-0 transition-colors"
+        <form onSubmit={handleSend} className="flex flex-col gap-3 max-w-4xl mx-auto w-full">
+          {attachments.length > 0 && (
+            <div className="flex flex-wrap gap-2 px-3 py-2 bg-black/30 border border-white/5 rounded-xl">
+              {attachments.map((file, index) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-2 bg-white/10 rounded-md px-2.5 py-1.5 text-xs text-white"
+                >
+                  {file.type.startsWith('image/') ? (
+                    <ImageIcon className="h-3 w-3 opacity-70" />
+                  ) : (
+                    <FileIcon className="h-3 w-3 opacity-70" />
+                  )}
+                  <span className="truncate max-w-[120px]">{file.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => removeAttachment(index)}
+                    className="text-muted-foreground hover:text-red-400 ml-1 transition-colors"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="flex items-end gap-3 w-full">
+            <Popover open={isTriggerOpen} onOpenChange={setIsTriggerOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="text-muted-foreground hover:text-blue-400 hover:bg-white/5 h-[48px] w-[48px] rounded-full flex-shrink-0 transition-colors"
+                >
+                  <Zap className="h-5 w-5" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                className="w-80 p-0 mb-2 border-white/10 bg-zinc-950/95 backdrop-blur-xl"
+                align="start"
+                side="top"
+                sideOffset={10}
               >
-                <Zap className="h-5 w-5" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent
-              className="w-80 p-0 mb-2 border-white/10 bg-zinc-950/95 backdrop-blur-xl"
-              align="start"
-              side="top"
-              sideOffset={10}
-            >
-              <div className="p-3 border-b border-white/10">
-                <h4 className="font-medium text-sm mb-2 text-foreground/90">Gatilhos Rápidos</h4>
-                <input
-                  className="w-full bg-black/40 border border-white/10 rounded-md px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-blue-500/50"
-                  placeholder="Buscar gatilho..."
-                  value={searchTrigger}
-                  onChange={(e) => setSearchTrigger(e.target.value)}
-                />
-              </div>
-              <div className="max-h-60 overflow-y-auto p-2">
-                {filteredTriggers.length === 0 ? (
-                  <div className="p-3 text-center text-sm text-muted-foreground">
-                    Nenhum gatilho encontrado.
-                  </div>
-                ) : (
-                  filteredTriggers.map((t) => (
-                    <button
-                      key={t.id}
-                      type="button"
-                      className="w-full text-left p-2 rounded-md hover:bg-white/10 transition-colors group mb-1 last:mb-0"
-                      onClick={() => handleSelectTrigger(t.content)}
-                    >
-                      <div className="font-medium text-sm text-foreground/90 group-hover:text-blue-400 transition-colors truncate">
-                        {t.title}
-                      </div>
-                      <div className="text-xs text-muted-foreground truncate mt-0.5">
-                        {t.content}
-                      </div>
-                    </button>
-                  ))
-                )}
-              </div>
-            </PopoverContent>
-          </Popover>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="text-muted-foreground hover:text-foreground hover:bg-white/5 h-[48px] w-[48px] rounded-full flex-shrink-0 transition-colors"
-          >
-            <Paperclip className="h-5 w-5" />
-          </Button>
-          <div className="flex-1 bg-black/40 border border-white/10 rounded-2xl flex items-end focus-within:ring-1 focus-within:ring-blue-500/50 focus-within:border-blue-500/50 transition-all overflow-hidden shadow-inner">
-            <textarea
-              className="flex-1 bg-transparent border-none min-h-[48px] max-h-[120px] px-4 py-3.5 text-[15px] text-foreground placeholder:text-muted-foreground focus-visible:outline-none resize-none leading-relaxed"
-              placeholder="Digite uma mensagem..."
-              value={msgText}
-              onChange={(e) => setMsgText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault()
-                  handleSend(e)
-                }
-              }}
-              rows={1}
+                <div className="p-3 border-b border-white/10">
+                  <h4 className="font-medium text-sm mb-2 text-foreground/90">Gatilhos Rápidos</h4>
+                  <input
+                    className="w-full bg-black/40 border border-white/10 rounded-md px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+                    placeholder="Buscar gatilho..."
+                    value={searchTrigger}
+                    onChange={(e) => setSearchTrigger(e.target.value)}
+                  />
+                </div>
+                <div className="max-h-60 overflow-y-auto p-2">
+                  {filteredTriggers.length === 0 ? (
+                    <div className="p-3 text-center text-sm text-muted-foreground">
+                      Nenhum gatilho encontrado.
+                    </div>
+                  ) : (
+                    filteredTriggers.map((t) => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        className="w-full text-left p-2 rounded-md hover:bg-white/10 transition-colors group mb-1 last:mb-0"
+                        onClick={() => handleSelectTrigger(t.content)}
+                      >
+                        <div className="font-medium text-sm text-foreground/90 group-hover:text-blue-400 transition-colors truncate">
+                          {t.title}
+                        </div>
+                        <div className="text-xs text-muted-foreground truncate mt-0.5">
+                          {t.content}
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileSelect}
+              className="hidden"
+              multiple
+              accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain"
             />
             <Button
               type="button"
               variant="ghost"
               size="icon"
-              className="text-muted-foreground hover:text-foreground hover:bg-transparent h-[48px] w-[48px] flex-shrink-0 transition-colors"
+              onClick={() => fileInputRef.current?.click()}
+              className="text-muted-foreground hover:text-foreground hover:bg-white/5 h-[48px] w-[48px] rounded-full flex-shrink-0 transition-colors"
             >
-              <Smile className="h-5 w-5" />
+              <Paperclip className="h-5 w-5" />
             </Button>
-          </div>
-          <Dialog open={isScheduleOpen} onOpenChange={setIsScheduleOpen}>
-            <DialogTrigger asChild>
+            <div className="flex-1 bg-black/40 border border-white/10 rounded-2xl flex items-end focus-within:ring-1 focus-within:ring-blue-500/50 focus-within:border-blue-500/50 transition-all overflow-hidden shadow-inner">
+              <textarea
+                className="flex-1 bg-transparent border-none min-h-[48px] max-h-[120px] px-4 py-3.5 text-[15px] text-foreground placeholder:text-muted-foreground focus-visible:outline-none resize-none leading-relaxed"
+                placeholder="Digite uma mensagem..."
+                value={msgText}
+                onChange={(e) => setMsgText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    handleSend(e)
+                  }
+                }}
+                rows={1}
+              />
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
-                disabled={!msgText.trim()}
-                className="rounded-full flex-shrink-0 h-[48px] w-[48px] bg-white/5 hover:bg-white/10 text-foreground transition-all disabled:opacity-50"
+                className="text-muted-foreground hover:text-foreground hover:bg-transparent h-[48px] w-[48px] flex-shrink-0 transition-colors"
               >
-                <CalendarClock className="h-5 w-5" />
+                <Smile className="h-5 w-5" />
               </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] bg-zinc-950 border-white/10">
-              <DialogHeader>
-                <DialogTitle>Agendar Mensagem</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="date">Data e Hora</Label>
-                  <input
-                    id="date"
-                    type="datetime-local"
-                    value={scheduleDate}
-                    onChange={(e) => setScheduleDate(e.target.value)}
-                    className="flex h-10 w-full rounded-md border border-white/10 bg-black/40 px-3 py-2 text-sm text-foreground ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Mensagem</Label>
-                  <div className="rounded-md border border-white/10 bg-black/40 px-3 py-2 text-sm text-muted-foreground min-h-[60px] max-h-[120px] overflow-y-auto whitespace-pre-wrap">
-                    {msgText || 'Nenhuma mensagem digitada...'}
+            </div>
+            <Dialog open={isScheduleOpen} onOpenChange={setIsScheduleOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  disabled={!msgText.trim() && attachments.length === 0}
+                  className="rounded-full flex-shrink-0 h-[48px] w-[48px] bg-white/5 hover:bg-white/10 text-foreground transition-all disabled:opacity-50"
+                >
+                  <CalendarClock className="h-5 w-5" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px] bg-zinc-950 border-white/10">
+                <DialogHeader>
+                  <DialogTitle>Agendar Mensagem</DialogTitle>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="date">Data e Hora</Label>
+                    <input
+                      id="date"
+                      type="datetime-local"
+                      value={scheduleDate}
+                      onChange={(e) => setScheduleDate(e.target.value)}
+                      className="flex h-10 w-full rounded-md border border-white/10 bg-black/40 px-3 py-2 text-sm text-foreground ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Mensagem</Label>
+                    <div className="rounded-md border border-white/10 bg-black/40 px-3 py-2 text-sm text-muted-foreground min-h-[60px] max-h-[120px] overflow-y-auto whitespace-pre-wrap">
+                      {msgText ||
+                        (attachments.length > 0
+                          ? '[Apenas Anexos]'
+                          : 'Nenhuma mensagem digitada...')}
+                    </div>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Anexos</Label>
+                    {attachments.length > 0 ? (
+                      <div className="text-sm text-muted-foreground mb-2">
+                        {attachments.length} arquivo(s) selecionado(s)
+                      </div>
+                    ) : (
+                      <div className="text-sm text-muted-foreground mb-2">Nenhum anexo.</div>
+                    )}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full bg-transparent border-white/10 hover:bg-white/5"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Paperclip className="h-4 w-4 mr-2" />
+                      Adicionar Anexo
+                    </Button>
                   </div>
                 </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => setIsScheduleOpen(false)}
-                  className="bg-transparent border-white/10 hover:bg-white/5"
-                >
-                  Cancelar
-                </Button>
-                <Button onClick={handleSchedule} disabled={!scheduleDate || !msgText.trim()}>
-                  Confirmar Agendamento
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-          <Button
-            type="submit"
-            size="icon"
-            disabled={!msgText.trim()}
-            className="rounded-full flex-shrink-0 h-[48px] w-[48px] bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/25 transition-all disabled:opacity-50 disabled:shadow-none"
-          >
-            <Send className="h-5 w-5 ml-0.5" />
-          </Button>
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsScheduleOpen(false)}
+                    className="bg-transparent border-white/10 hover:bg-white/5"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    onClick={handleSchedule}
+                    disabled={!scheduleDate || (!msgText.trim() && attachments.length === 0)}
+                  >
+                    Confirmar Agendamento
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+            <Button
+              type="submit"
+              size="icon"
+              disabled={!msgText.trim() && attachments.length === 0}
+              className="rounded-full flex-shrink-0 h-[48px] w-[48px] bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/25 transition-all disabled:opacity-50 disabled:shadow-none"
+            >
+              <Send className="h-5 w-5 ml-0.5" />
+            </Button>
+          </div>
         </form>
       </div>
     </div>

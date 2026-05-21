@@ -13,4 +13,23 @@ export const sendMessage = (data: {
   is_read: boolean
   direction?: string
   remote_sender?: string
-}) => pb.collection('messages').create({ ...data, direction: 'outbound' })
+  attachments?: File[]
+}) => {
+  if (data.attachments && data.attachments.length > 0) {
+    const formData = new FormData()
+    formData.append('content', data.content)
+    formData.append('device_id', data.device_id)
+    formData.append('sender_id', data.sender_id)
+    formData.append('is_read', data.is_read.toString())
+    formData.append('direction', 'outbound')
+    if (data.remote_sender) formData.append('remote_sender', data.remote_sender)
+
+    data.attachments.forEach((file) => {
+      formData.append('attachments', file)
+    })
+
+    return pb.collection('messages').create(formData)
+  }
+
+  return pb.collection('messages').create({ ...data, direction: 'outbound' })
+}
