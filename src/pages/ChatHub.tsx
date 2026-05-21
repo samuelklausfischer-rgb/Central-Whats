@@ -51,6 +51,13 @@ export default function ChatHub() {
   }, [selectedDeviceId])
 
   useRealtime('messages', (e) => {
+    if (e.action === 'create' && e.record.direction === 'inbound') {
+      const audio = new Audio('/notification.mp3')
+      audio.play().catch((err) => {
+        console.warn('Could not play notification sound. Browser may be blocking autoplay.', err)
+      })
+    }
+
     if (e.record.device_id === selectedDeviceId) {
       if (e.action === 'create') setMessages((prev) => [...prev, e.record])
       else if (e.action === 'update')
