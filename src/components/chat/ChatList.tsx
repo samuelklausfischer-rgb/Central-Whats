@@ -1,3 +1,4 @@
+import { useState, useMemo } from 'react'
 import {
   Select,
   SelectContent,
@@ -7,9 +8,10 @@ import {
 } from '@/components/ui/select'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
-import { Check, CheckCheck, Smartphone } from 'lucide-react'
+import { Check, CheckCheck, Smartphone, Search, X } from 'lucide-react'
 
 export interface ChatListProps {
   devices: any[]
@@ -32,6 +34,19 @@ export function ChatList({
   onSelectContact,
   isMobile,
 }: ChatListProps) {
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const filteredConversations = useMemo(() => {
+    if (!searchQuery.trim()) return conversations
+
+    const lowerQuery = searchQuery.toLowerCase()
+    return conversations.filter((conv) => {
+      const contact = contacts.find((c) => c.remote_jid === conv.remote_sender)
+      const name = contact?.nickname || contact?.name || conv.sender_name || conv.remote_sender
+      return name.toLowerCase().includes(lowerQuery)
+    })
+  }, [searchQuery, conversations, contacts])
+
   return (
     <div
       className={cn(
@@ -70,11 +85,30 @@ export function ChatList({
             ))}
           </SelectContent>
         </Select>
+
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Procurar contatos..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 pr-9 bg-zinc-900 border-white/10 text-white placeholder:text-muted-foreground h-10"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white transition-colors"
+              title="Limpar busca"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
       </div>
 
       <ScrollArea className="flex-1">
         <div className="p-2 flex flex-col gap-1">
-          {conversations.map((conv) => {
+          {filteredConversations.map((conv) => {
             const contact = contacts.find((c) => c.remote_jid === conv.remote_sender)
             const isSelected = selectedContact === conv.remote_sender
             const name =
@@ -132,12 +166,17 @@ export function ChatList({
               </button>
             )
           })}
-          {conversations.length === 0 && selectedDeviceId && (
+          {filteredConversations.length === 0 && searchQuery && (
+            <div className="text-center p-8 text-muted-foreground text-sm">
+              Nenhum contato encontrado
+            </div>
+          )}
+          {conversations.length === 0 && !searchQuery && selectedDeviceId && (
             <div className="text-center p-8 text-muted-foreground text-sm">
               Nenhuma conversa encontrada neste dispositivo.
             </div>
           )}
-          {conversations.length === 0 && !selectedDeviceId && (
+          {conversations.length === 0 && !searchQuery && !selectedDeviceId && (
             <div className="text-center p-8 text-muted-foreground text-sm">
               Selecione um dispositivo para carregar as mensagens.
             </div>
