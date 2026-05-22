@@ -24,4 +24,6 @@ export default function Layout() {
           </main>
         </div>
       </div>
-    </SidebarP
+    </SidebarProvider>
+  )
+}
