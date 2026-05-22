@@ -22,6 +22,7 @@ import {
   Wand2,
   Sparkles,
   Loader2,
+  ClipboardList,
 } from 'lucide-react'
 import {
   Dialog,
@@ -223,6 +224,10 @@ export function ChatWindow({ device, contact, conversation, contacts, onBack, is
   const { toast } = useToast()
 
   const [msgText, setMsgText] = useState('')
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false)
+  const [taskTitle, setTaskTitle] = useState('')
+  const [taskDescription, setTaskDescription] = useState('')
+  const [isSavingTask, setIsSavingTask] = useState(false)
   const [isNicknameOpen, setIsNicknameOpen] = useState(false)
   const [nicknameInput, setNicknameInput] = useState('')
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -442,16 +447,34 @@ export function ChatWindow({ device, contact, conversation, contacts, onBack, is
     }
   }
 
-  const handleAddTask = () => {
-    if (!device || !contact) return
-    const contactName = displayName
-    addTask({
-      title: `Acompanhamento: ${contactName}`,
-      status: 'pendente',
-      deviceId: device.id,
-      description: `Tarefa criada via ChatHub para o contato ${contactName}.`,
-    })
-    toast({ title: 'Tarefa Criada' })
+  const handleSaveTask = async () => {
+    if (!contactRecord?.id || !user) {
+      toast({ title: 'Erro: Contato não salvo no banco.', variant: 'destructive' })
+      return
+    }
+    if (!taskTitle.trim()) {
+      toast({ title: 'Nome da tarefa é obrigatório.', variant: 'destructive' })
+      return
+    }
+
+    setIsSavingTask(true)
+    try {
+      await pb.collection('tasks').create({
+        title: taskTitle.trim(),
+        description: taskDescription.trim(),
+        status: 'pending',
+        contact_id: contactRecord.id,
+        user_id: user.id,
+      })
+      toast({ title: 'Tarefa guardada com sucesso!' })
+      setIsTaskModalOpen(false)
+      setTaskTitle('')
+      setTaskDescription('')
+    } catch (err) {
+      toast({ title: 'Erro ao guardar tarefa.', variant: 'destructive' })
+    } finally {
+      setIsSavingTask(false)
+    }
   }
 
   const handleSelectTrigger = (content: string) => {
@@ -664,9 +687,9 @@ export function ChatWindow({ device, contact, conversation, contacts, onBack, is
                 <Button
                   className="w-full justify-start h-12 bg-white/5 hover:bg-white/10 border-white/5 text-foreground transition-all"
                   variant="outline"
-                  onClick={handleAddTask}
+                  onClick={() => setIsTaskModalOpen(true)}
                 >
-                  <ListTodo className="mr-3 h-5 w-5 text-blue-400" /> Criar Tarefa para Contato
+                  <ClipboardList className="mr-3 h-5 w-5 text-blue-400" /> Guardar tarefa
                 </Button>
                 <Button
                   className="w-full justify-start h-12 bg-white/5 hover:bg-white/10 border-white/5 text-foreground transition-all"
@@ -812,6 +835,59 @@ export function ChatWindow({ device, contact, conversation, contacts, onBack, is
           )
         })}
       </div>
+
+      <Dialog open={isTaskModalOpen} onOpenChange={setIsTaskModalOpen}>
+        <DialogContent className="sm:max-w-[425px] bg-zinc-950 border-white/10">
+          <DialogHeader>
+            <DialogTitle>Nova Tarefa</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label className="text-muted-foreground">Contato</Label>
+              <div className="text-sm font-medium text-foreground bg-white/5 p-2 rounded-md border border-white/5">
+                {displayName}
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="taskTitle">Nome da tarefa</Label>
+              <Input
+                id="taskTitle"
+                value={taskTitle}
+                onChange={(e) => setTaskTitle(e.target.value)}
+                placeholder="Ex: Enviar proposta..."
+                className="bg-black/40 border-white/10 text-foreground placeholder:text-muted-foreground"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="taskDesc">Descrição</Label>
+              <textarea
+                id="taskDesc"
+                value={taskDescription}
+                onChange={(e) => setTaskDescription(e.target.value)}
+                placeholder="Detalhes da tarefa..."
+                className="flex min-h-[80px] w-full rounded-md border border-white/10 bg-black/40 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 disabled:cursor-not-allowed disabled:opacity-50 resize-none custom-scrollbar"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsTaskModalOpen(false)}
+              className="bg-transparent border-white/10 hover:bg-white/5 text-foreground"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSaveTask}
+              disabled={isSavingTask || !taskTitle.trim()}
+              className="bg-blue-600 text-white hover:bg-blue-500"
+            >
+              {isSavingTask ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Guardar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div className="flex flex-col bg-zinc-950/60 backdrop-blur-2xl border-t border-white/5 shadow-[0_-4px_20px_rgba(0,0,0,0.2)] flex-shrink-0 p-4 z-10 relative">
         {(device?.signature || user?.signature) && (
