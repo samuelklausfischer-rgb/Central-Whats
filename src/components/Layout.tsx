@@ -16,9 +16,9 @@ export default function Layout() {
         <div className="relative z-10 flex flex-col w-full flex-1 overflow-hidden transition-all duration-300 ease-in-out bg-zinc-950/30 backdrop-blur-md">
           <Header />
           <main
-            className={`flex-1 overflow-hidden animate-fade-in-up flex flex-col ${isChat ? '' : 'p-4 md:p-6 lg:p-8'}`}
+            className={`flex-1 animate-fade-in-up flex flex-col ${isChat ? 'overflow-hidden' : 'overflow-y-auto p-4 md:p-6 lg:p-8'}`}
           >
-            <div className={`mx-auto w-full h-full ${isChat ? 'max-w-none' : 'max-w-7xl'}`}>
+            <div className={`mx-auto w-full ${isChat ? 'h-full max-w-none' : 'max-w-7xl'}`}>
               <Outlet />
             </div>
           </main>
