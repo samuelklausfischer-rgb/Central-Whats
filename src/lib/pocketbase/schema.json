@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-22T15:58:30.067Z",
+  "generatedAt": "2026-05-22T16:58:06.969Z",
   "collections": [
     {
       "name": "users",
@@ -145,11 +145,11 @@
       "name": "messages",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != ''",
-        "view": "@request.auth.id != ''",
-        "create": "@request.auth.id != ''",
-        "update": "@request.auth.id != ''",
-        "delete": "@request.auth.id != ''"
+        "list": "@request.auth.id != '' && (@request.auth.is_admin = true || @request.auth.allowed_devices ?= device_id)",
+        "view": "@request.auth.id != '' && (@request.auth.is_admin = true || @request.auth.allowed_devices ?= device_id)",
+        "create": "@request.auth.id != '' && (@request.auth.is_admin = true || @request.auth.allowed_devices ?= device_id)",
+        "update": "@request.auth.id != '' && (@request.auth.is_admin = true || @request.auth.allowed_devices ?= device_id)",
+        "delete": "@request.auth.id != '' && (@request.auth.is_admin = true || @request.auth.allowed_devices ?= device_id)"
       },
       "fields": [
         {

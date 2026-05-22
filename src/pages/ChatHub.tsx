@@ -33,6 +33,8 @@ export default function ChatHub() {
 
       if (targetId && data.some((d) => d.id === targetId)) {
         setSelectedDeviceId(targetId)
+      } else if (data.length > 0) {
+        setSelectedDeviceId(data[0].id)
       }
     })
   }, [urlDeviceId])

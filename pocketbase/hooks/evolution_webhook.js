@@ -97,10 +97,10 @@ routerAdd('POST', '/backend/v1/webhooks/evolution/messages-upsert', (e) => {
 
       let device
       try {
-        device = $app.findFirstRecordByData('devices', 'instance_key', 'Celular teste')
+        device = $app.findFirstRecordByData('devices', 'instance_key', body.instance)
       } catch (err) {
         logContext.status = 'discarded'
-        logContext.reason = 'device exactly named "Celular teste" not found in instance_key'
+        logContext.reason = 'device for this instance not found in instance_key'
         writeLog('warn', 'Evolution webhook discarded')
         return e.json(200, { status: 'error', message: 'device not found' })
       }
