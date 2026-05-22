@@ -60,93 +60,9 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | null>(null)
 
-const initialDevices: Device[] = [
-  {
-    id: 'd1',
-    name: 'Celular Financeiro',
-    department: 'Financeiro',
-    model: 'Galaxy S22',
-    battery: 85,
-    signal: 4,
-    status: 'online',
-  },
-  {
-    id: 'd2',
-    name: 'Celular Operações',
-    department: 'Operações',
-    model: 'Galaxy S21',
-    battery: 20,
-    signal: 2,
-    status: 'offline',
-  },
-  {
-    id: 'd3',
-    name: 'Admin Central',
-    department: 'Administrativo',
-    model: 'iPhone 13',
-    battery: 100,
-    signal: 5,
-    status: 'online',
-  },
-]
+const initialDevices: Device[] = []
 
-const initialThreads: ChatThread[] = [
-  {
-    id: 't1',
-    deviceId: 'd1',
-    contactName: 'Fornecedor Alpha',
-    contactNumber: '+55 11 99999-1111',
-    avatar: 'https://img.usecurling.com/ppl/thumbnail?seed=1',
-    unread: true,
-    messages: [
-      {
-        id: 'm1',
-        text: 'Bom dia, a nota fiscal referente ao mês passado já foi emitida?',
-        sender: 'them',
-        timestamp: '10:30',
-      },
-      {
-        id: 'm2',
-        text: 'Bom dia! Vou verificar com a equipe e já retorno.',
-        sender: 'me',
-        timestamp: '10:32',
-      },
-      {
-        id: 'm3',
-        text: 'Perfeito, aguardo o envio. Obrigado.',
-        sender: 'them',
-        timestamp: '10:35',
-      },
-    ],
-  },
-  {
-    id: 't2',
-    deviceId: 'd1',
-    contactName: 'Banco - Gerente',
-    contactNumber: '+55 11 98888-2222',
-    avatar: 'https://img.usecurling.com/ppl/thumbnail?seed=2&gender=female',
-    unread: false,
-    messages: [
-      { id: 'm4', text: 'Documentação da conta aprovada.', sender: 'them', timestamp: 'Ontem' },
-    ],
-  },
-  {
-    id: 't3',
-    deviceId: 'd3',
-    contactName: 'Suporte TI',
-    contactNumber: '+55 11 97777-3333',
-    avatar: 'https://img.usecurling.com/ppl/thumbnail?seed=3',
-    unread: true,
-    messages: [
-      {
-        id: 'm5',
-        text: 'A atualização do sistema de folha foi concluída nesta madrugada.',
-        sender: 'them',
-        timestamp: '09:00',
-      },
-    ],
-  },
-]
+const initialThreads: ChatThread[] = []
 
 const initialTasks: Task[] = [
   {

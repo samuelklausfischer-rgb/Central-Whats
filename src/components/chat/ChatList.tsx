@@ -1,17 +1,26 @@
-import { useState, useEffect, useRef } from 'react'
-import { Search, ChevronDown, MonitorSmartphone } from 'lucide-react'
-import { Input } from '@/components/ui/input'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { getContactTags } from '@/services/contact_tags'
-import { SmartAvatar } from '@/components/chat/SmartAvatar'
-import { useRealtime } from '@/hooks/use-realtime'
-import { Button } from '@/components/ui/button'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { cn } from '@/lib/utils'
+import { format } from 'date-fns'
+import { Check, CheckCheck, Smartphone } from 'lucide-react'
+
+export interface ChatListProps {
+  devices: any[]
+  selectedDeviceId: string | null
+  onSelectDevice: (id: string) => void
+  conversations: any[]
+  contacts: any[]
+  selectedContact: string | null
+  onSelectContact: (id: string) => void
+  isMobile: boolean
+}
 
 export function ChatList({
   devices,
@@ -21,256 +30,120 @@ export function ChatList({
   contacts,
   selectedContact,
   onSelectContact,
-}: any) {
-  const selectedDevice = devices.find((d: any) => d.id === selectedDeviceId)
-
-  const [deviceTags, setDeviceTags] = useState<any[]>([])
-
-  const loadDeviceTagsRef = useRef<NodeJS.Timeout | null>(null)
-
-  const loadDeviceTags = () => {
-    if (loadDeviceTagsRef.current) clearTimeout(loadDeviceTagsRef.current)
-    loadDeviceTagsRef.current = setTimeout(async () => {
-      if (selectedDeviceId) {
-        try {
-          const tags = await getContactTags(selectedDeviceId)
-          setDeviceTags(tags)
-        } catch {
-          /* intentionally ignored */
-        }
-      } else {
-        setDeviceTags([])
-      }
-    }, 500)
-  }
-
-  useEffect(() => {
-    loadDeviceTags()
-    return () => {
-      if (loadDeviceTagsRef.current) clearTimeout(loadDeviceTagsRef.current)
-    }
-  }, [selectedDeviceId])
-
-  useRealtime('contact_tags', () => {
-    loadDeviceTags()
-  })
-
+  isMobile,
+}: ChatListProps) {
   return (
-    <div className="flex flex-col h-full bg-zinc-950/40 backdrop-blur-2xl border-r border-white/5 w-full md:w-[320px] lg:w-[380px] flex-shrink-0">
-      <div className="p-4 border-b border-white/5 space-y-4 bg-white/5 shadow-[0_4px_20px_rgba(0,0,0,0.2)] z-10 relative">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              className="w-full h-14 bg-black/40 border-white/10 hover:bg-black/60 hover:text-white justify-between px-3 shadow-inner transition-all duration-300"
-            >
-              {selectedDevice ? (
-                <div className="flex items-center gap-3 truncate">
-                  <div className="relative flex-shrink-0">
-                    <MonitorSmartphone className="h-6 w-6 text-blue-400" />
-                    <div
-                      className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-zinc-950 ${
-                        selectedDevice.status === 'online' ? 'bg-emerald-500' : 'bg-zinc-500'
-                      }`}
-                    />
-                  </div>
-                  <div className="flex flex-col items-start truncate">
-                    <span className="font-semibold text-[15px] leading-tight truncate">
-                      {selectedDevice.name}
+    <div
+      className={cn(
+        'flex flex-col h-full bg-zinc-950/50 border-r border-white/10',
+        isMobile ? 'w-full' : 'w-80 lg:w-96',
+      )}
+    >
+      <div className="p-4 border-b border-white/10 flex flex-col gap-4 shrink-0">
+        <h2 className="text-xl font-semibold text-white">Mensagens</h2>
+        <Select value={selectedDeviceId || undefined} onValueChange={onSelectDevice}>
+          <SelectTrigger className="w-full bg-zinc-900 border-white/10 h-14">
+            <SelectValue placeholder="Selecione um dispositivo..." />
+          </SelectTrigger>
+          <SelectContent>
+            {devices.map((device) => (
+              <SelectItem key={device.id} value={device.id} className="py-3">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-8 w-8 bg-zinc-800">
+                    <AvatarImage src={device.avatar_url} />
+                    <AvatarFallback>
+                      <Smartphone className="h-4 w-4 text-muted-foreground" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col text-left">
+                    <span className="text-sm font-medium leading-none text-zinc-100">
+                      {device.name}
                     </span>
-                    <span className="text-[12px] text-muted-foreground flex items-center gap-1">
-                      {selectedDevice.department}
-                      {selectedDevice.unread_count > 0 && (
-                        <span className="bg-blue-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold ml-1">
-                          {selectedDevice.unread_count}
-                        </span>
-                      )}
-                    </span>
+                    {device.department && (
+                      <span className="text-xs text-muted-foreground mt-1.5">
+                        {device.department}
+                      </span>
+                    )}
                   </div>
                 </div>
-              ) : (
-                <span className="text-muted-foreground truncate">
-                  {devices.length === 0
-                    ? 'Nenhuma instância configurada'
-                    : 'Selecione uma instância...'}
-                </span>
-              )}
-              <ChevronDown className="h-4 w-4 opacity-50 flex-shrink-0" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] bg-zinc-950/95 border-white/10 backdrop-blur-xl">
-            {devices.length === 0 ? (
-              <div className="p-3 text-sm text-center text-muted-foreground">
-                Nenhuma instância configurada
-              </div>
-            ) : (
-              devices.map((device: any) => (
-                <DropdownMenuItem
-                  key={device.id}
-                  onClick={() => onSelectDevice(device.id)}
-                  className="flex items-center gap-3 p-3 cursor-pointer focus:bg-white/10"
-                >
-                  <div className="relative flex-shrink-0">
-                    <MonitorSmartphone className="h-5 w-5 text-gray-400" />
-                    <div
-                      className={`absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full border-2 border-zinc-950 ${
-                        device.status === 'online' ? 'bg-emerald-500' : 'bg-zinc-500'
-                      }`}
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium text-sm truncate">{device.name}</span>
-                      {device.unread_count > 0 && (
-                        <span className="bg-blue-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
-                          {device.unread_count}
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-[11px] text-muted-foreground">{device.department}</span>
-                  </div>
-                </DropdownMenuItem>
-              ))
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <div className="relative">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Pesquisar conversas..."
-            className="pl-9 bg-black/40 border-white/10 hover:border-white/20 text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-blue-500/50 rounded-xl transition-all shadow-inner"
-            disabled={!selectedDeviceId}
-          />
-        </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
-      <div className="flex-1 overflow-y-auto space-y-1.5 p-3 custom-scrollbar">
-        {!selectedDeviceId ? (
-          <div className="h-full flex flex-col items-center justify-center text-muted-foreground space-y-3 opacity-60">
-            <MonitorSmartphone className="h-10 w-10" />
-            <p className="text-sm text-center px-4">
-              Selecione uma instância acima para ver as conversas
-            </p>
-          </div>
-        ) : conversations.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-muted-foreground space-y-3 opacity-60">
-            <p className="text-sm">Nenhuma conversa encontrada</p>
-          </div>
-        ) : (
-          conversations.map((conv: any) => {
+      <ScrollArea className="flex-1">
+        <div className="p-2 flex flex-col gap-1">
+          {conversations.map((conv) => {
+            const contact = contacts.find((c) => c.remote_jid === conv.remote_sender)
             const isSelected = selectedContact === conv.remote_sender
-            const hasUnread = conv.unread_count > 0
-
-            const lastMsgDate = new Date(conv.lastMessage.created)
-            const today = new Date()
-            const isToday = lastMsgDate.toDateString() === today.toDateString()
-            const timeStr = isToday
-              ? lastMsgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-              : lastMsgDate.toLocaleDateString([], { day: '2-digit', month: '2-digit' })
+            const name =
+              contact?.nickname || contact?.name || conv.sender_name || conv.remote_sender
 
             return (
               <button
                 key={conv.remote_sender}
                 onClick={() => onSelectContact(conv.remote_sender)}
-                className={`w-full flex items-center gap-3 p-3 text-left rounded-xl transition-all duration-300 border ${
-                  isSelected
-                    ? 'bg-blue-500/10 border-blue-500/30 shadow-[0_0_20px_rgba(37,99,235,0.15)]'
-                    : 'border-transparent hover:bg-white/5 hover:border-white/10 hover:shadow-lg hover:shadow-black/20'
-                }`}
+                className={cn(
+                  'flex items-center gap-3 p-3 rounded-xl transition-all duration-200 text-left w-full hover:bg-white/5',
+                  isSelected ? 'bg-white/10' : '',
+                )}
               >
-                <SmartAvatar
-                  jid={conv.remote_sender}
-                  name={(() => {
-                    const cRecord = contacts.find((c: any) => c.remote_jid === conv.remote_sender)
-                    return cRecord?.nickname || conv.sender_name || cRecord?.name
-                  })()}
-                  instanceKey={selectedDevice.instance_key}
-                  contactRecord={contacts.find((c: any) => c.remote_jid === conv.remote_sender)}
-                  className={`h-12 w-12 border flex-shrink-0 ${isSelected ? 'border-blue-500/50' : 'border-white/10 shadow-sm'}`}
-                  fallbackClassName="bg-black/40 text-foreground font-medium text-sm"
-                />
+                <Avatar className="h-12 w-12 border border-white/10 bg-zinc-800">
+                  <AvatarImage src={contact?.avatar_url} />
+                  <AvatarFallback className="text-zinc-400">
+                    {name.substring(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-baseline mb-0.5">
-                    <p
-                      className={`text-[15px] truncate ${
-                        hasUnread && !isSelected
-                          ? 'font-semibold text-white'
-                          : 'font-medium text-foreground/90'
-                      }`}
-                    >
-                      {(() => {
-                        const contactRecord = contacts?.find(
-                          (c: any) => c.remote_jid === conv.remote_sender,
-                        )
-                        return contactRecord?.nickname
-                          ? contactRecord.nickname
-                          : conv.sender_name && conv.sender_name !== 'Unknown Sender'
-                            ? conv.sender_name
-                            : contactRecord?.name && contactRecord.name !== 'Unknown Sender'
-                              ? contactRecord.name
-                              : conv.remote_sender === 'Unknown Sender'
-                                ? conv.remote_sender
-                                : `+${conv.remote_sender}`
-                      })()}
-                    </p>
-                    <span
-                      className={`text-[11px] ${
-                        hasUnread && !isSelected
-                          ? 'text-blue-400 font-bold'
-                          : 'text-muted-foreground'
-                      }`}
-                    >
-                      {timeStr}
+                <div className="flex-1 overflow-hidden">
+                  <div className="flex justify-between items-baseline mb-1">
+                    <h3 className="font-medium text-zinc-100 truncate pr-2">{name}</h3>
+                    <span className="text-xs text-zinc-500 whitespace-nowrap">
+                      {format(new Date(conv.lastMessage.created), 'HH:mm')}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between gap-2">
+
+                  <div className="flex items-center gap-1">
+                    {conv.lastMessage.direction === 'outbound' &&
+                      (conv.lastMessage.is_read ? (
+                        <CheckCheck className="h-3 w-3 text-blue-400 shrink-0" />
+                      ) : (
+                        <Check className="h-3 w-3 text-zinc-500 shrink-0" />
+                      ))}
                     <p
-                      className={`text-[13px] truncate ${
-                        hasUnread && !isSelected
-                          ? 'text-foreground/90 font-medium'
-                          : 'text-muted-foreground'
-                      }`}
+                      className={cn(
+                        'text-sm truncate',
+                        conv.unread_count > 0 ? 'text-zinc-100 font-medium' : 'text-zinc-400',
+                      )}
                     >
                       {conv.lastMessage.content}
                     </p>
-                    {hasUnread && !isSelected && (
-                      <div className="h-5 min-w-[20px] rounded-full bg-blue-500 flex items-center justify-center text-[11px] font-bold text-white px-1.5 flex-shrink-0 shadow-[0_0_10px_rgba(37,99,235,0.4)]">
-                        {conv.unread_count}
-                      </div>
-                    )}
                   </div>
-
-                  {(() => {
-                    const contactLabels = deviceTags.filter(
-                      (t: any) => t.remote_sender === conv.remote_sender && t.expand?.label_id,
-                    )
-                    if (contactLabels.length === 0) return null
-                    return (
-                      <div className="flex flex-wrap gap-1 mt-1.5">
-                        {contactLabels.slice(0, 3).map((t: any) => (
-                          <div
-                            key={t.id}
-                            className="w-2.5 h-2.5 rounded-full shadow-sm border border-black/20"
-                            style={{ backgroundColor: t.expand.label_id.color }}
-                            title={t.expand.label_id.name}
-                          />
-                        ))}
-                        {contactLabels.length > 3 && (
-                          <span className="text-[9px] text-muted-foreground flex items-center">
-                            +{contactLabels.length - 3}
-                          </span>
-                        )}
-                      </div>
-                    )
-                  })()}
                 </div>
+
+                {conv.unread_count > 0 && (
+                  <div className="h-5 min-w-5 rounded-full bg-primary flex items-center justify-center px-1.5 shrink-0">
+                    <span className="text-[10px] font-bold text-primary-foreground">
+                      {conv.unread_count}
+                    </span>
+                  </div>
+                )}
               </button>
             )
-          })
-        )}
-      </div>
+          })}
+          {conversations.length === 0 && selectedDeviceId && (
+            <div className="text-center p-8 text-muted-foreground text-sm">
+              Nenhuma conversa encontrada neste dispositivo.
+            </div>
+          )}
+          {conversations.length === 0 && !selectedDeviceId && (
+            <div className="text-center p-8 text-muted-foreground text-sm">
+              Selecione um dispositivo para carregar as mensagens.
+            </div>
+          )}
+        </div>
+      </ScrollArea>
     </div>
   )
 }
