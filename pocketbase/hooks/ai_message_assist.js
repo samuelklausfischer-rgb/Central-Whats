@@ -12,39 +12,18 @@ routerAdd(
       return e.internalServerError('GROQ_KEY not configured')
     }
 
-    let prompt = ''
-    switch (action) {
-      case 'formalize':
-        prompt =
-          'Assistente de escrita profissional. Tom formal, claro e educado. Preserve o sentido.'
-        break
-      case 'correct_spelling':
-        prompt = 'Revisor de português. Corrija ortografia, acentuação e gramática. Preserve o tom.'
-        break
-      case 'improve_clarity':
-        prompt = 'Assistente de comunicação. Reescreva para ficar mais claro e organizado.'
-        break
-      case 'make_shorter':
-        prompt = 'Assistente de comunicação objetiva. Reescreva para ficar mais curto e direto.'
-        break
-      case 'make_kind':
-        prompt = 'Assistente de atendimento cordial. Tom mais gentil, empático e profissional.'
-        break
-      case 'summarize':
-        prompt = 'Assistente de resumo. Mantenha somente informações essenciais.'
-        break
-      case 'expand':
-        prompt = 'Assistente de escrita. Expanda de forma natural e clara sem inventar dados.'
-        break
-      case 'professional_reply':
-        prompt = 'Transforme em resposta profissional e educada pronta para o cliente.'
-        break
-      case 'suggest_reply':
-        prompt = 'Assistente de WhatsApp. Sugira resposta curta e profissional baseada no contexto.'
-        break
-      default:
-        return e.badRequestError('Ação inválida')
+    let promptRecord
+    try {
+      promptRecord = $app.findFirstRecordByFilter(
+        'ai_assistant_prompts',
+        'action_key = {:a} && user_id = {:u} && is_active = true',
+        { a: action, u: e.auth.id },
+      )
+    } catch (_) {
+      return e.badRequestError('Ação de IA inválida ou não encontrada')
     }
+
+    let prompt = promptRecord.getString('system_prompt')
 
     prompt +=
       "\n\nREGRAS:\n- Responda apenas em português do Brasil (pt-BR).\n- Nenhuma explicação, saudação, confirmação ou meta-fala (ex: nada de 'Aqui está', 'Claro').\n- Não use aspas envolvendo a resposta.\n- Retorne apenas o texto final e nada mais."

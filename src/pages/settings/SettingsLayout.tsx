@@ -8,7 +8,9 @@ export default function SettingsLayout() {
     ? 'devices'
     : location.pathname.includes('/settings/labels')
       ? 'labels'
-      : 'general'
+      : location.pathname.includes('/settings/ai-assistant')
+        ? 'ai-assistant'
+        : 'general'
 
   return (
     <div className="flex flex-col gap-6">
@@ -29,6 +31,9 @@ export default function SettingsLayout() {
           </TabsTrigger>
           <TabsTrigger value="labels" asChild>
             <Link to="/settings/labels">Etiquetas</Link>
+          </TabsTrigger>
+          <TabsTrigger value="ai-assistant" asChild>
+            <Link to="/settings/ai-assistant">Assistente IA</Link>
           </TabsTrigger>
         </TabsList>
       </Tabs>

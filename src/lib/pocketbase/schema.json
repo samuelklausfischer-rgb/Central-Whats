@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-21T20:15:14.683Z",
+  "generatedAt": "2026-05-22T12:24:40.530Z",
   "collections": [
     {
       "name": "users",
@@ -558,6 +558,67 @@
       ],
       "indexes": [
         "CREATE UNIQUE INDEX idx_contacts_remote_jid ON contacts (remote_jid) WHERE remote_jid != ''"
+      ]
+    },
+    {
+      "name": "ai_assistant_prompts",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && user_id = @request.auth.id",
+        "view": "@request.auth.id != '' && user_id = @request.auth.id",
+        "create": "@request.auth.id != '' && user_id = @request.auth.id",
+        "update": "@request.auth.id != '' && user_id = @request.auth.id",
+        "delete": "@request.auth.id != '' && user_id = @request.auth.id"
+      },
+      "fields": [
+        {
+          "name": "label",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "action_key",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "system_prompt",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "is_active",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_ai_prompts_user_action ON ai_assistant_prompts (user_id, action_key)"
       ]
     }
   ]

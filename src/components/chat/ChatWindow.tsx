@@ -245,6 +245,8 @@ export function ChatWindow({ device, contact, conversation, contacts, onBack, is
   const [aiResult, setAiResult] = useState('')
   const [aiActionSelected, setAiActionSelected] = useState('')
   const [aiOriginalText, setAiOriginalText] = useState('')
+  const [aiPrompts, setAiPrompts] = useState<any[]>([])
+  const [isAiPromptsLoading, setIsAiPromptsLoading] = useState(true)
 
   const messages = conversation?.messages || []
 
@@ -284,6 +286,24 @@ export function ChatWindow({ device, contact, conversation, contacts, onBack, is
   })
   useRealtime('contact_tags', () => {
     loadContactTags()
+  })
+
+  const fetchAiPrompts = () => {
+    if (!user) return
+    setIsAiPromptsLoading(true)
+    pb.collection('ai_assistant_prompts')
+      .getFullList({ filter: 'is_active = true', sort: 'created' })
+      .then(setAiPrompts)
+      .catch(() => {})
+      .finally(() => setIsAiPromptsLoading(false))
+  }
+
+  useEffect(() => {
+    fetchAiPrompts()
+  }, [user])
+
+  useRealtime('ai_assistant_prompts', () => {
+    fetchAiPrompts()
   })
 
   useEffect(() => {
@@ -938,61 +958,29 @@ export function ChatWindow({ device, contact, conversation, contacts, onBack, is
                   <DropdownMenuLabel className="text-xs text-muted-foreground font-semibold">
                     Assistente IA
                   </DropdownMenuLabel>
-                  <DropdownMenuItem
-                    onClick={() => handleAiAction('suggest_reply')}
-                    className="cursor-pointer focus:bg-white/10"
-                  >
-                    Sugerir resposta
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator className="bg-white/10" />
-                  <DropdownMenuItem
-                    onClick={() => handleAiAction('formalize')}
-                    className="cursor-pointer focus:bg-white/10"
-                  >
-                    Formalizar texto
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleAiAction('correct_spelling')}
-                    className="cursor-pointer focus:bg-white/10"
-                  >
-                    Corrigir ortografia
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleAiAction('improve_clarity')}
-                    className="cursor-pointer focus:bg-white/10"
-                  >
-                    Melhorar clareza
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleAiAction('make_shorter')}
-                    className="cursor-pointer focus:bg-white/10"
-                  >
-                    Mais objetivo
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleAiAction('make_kind')}
-                    className="cursor-pointer focus:bg-white/10"
-                  >
-                    Mais cordial
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleAiAction('professional_reply')}
-                    className="cursor-pointer focus:bg-white/10"
-                  >
-                    Resposta profissional
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleAiAction('expand')}
-                    className="cursor-pointer focus:bg-white/10"
-                  >
-                    Expandir
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleAiAction('summarize')}
-                    className="cursor-pointer focus:bg-white/10"
-                  >
-                    Resumir
-                  </DropdownMenuItem>
+                  {isAiPromptsLoading ? (
+                    <div className="p-4 flex justify-center">
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : aiPrompts.length === 0 ? (
+                    <div className="p-2 text-xs text-muted-foreground text-center">
+                      Nenhuma ação ativa
+                    </div>
+                  ) : (
+                    aiPrompts.map((p, idx) => (
+                      <React.Fragment key={p.id}>
+                        {p.action_key === 'formalize' && idx > 0 && (
+                          <DropdownMenuSeparator className="bg-white/10" />
+                        )}
+                        <DropdownMenuItem
+                          onClick={() => handleAiAction(p.action_key)}
+                          className="cursor-pointer focus:bg-white/10"
+                        >
+                          {p.label}
+                        </DropdownMenuItem>
+                      </React.Fragment>
+                    ))
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
               <Button
