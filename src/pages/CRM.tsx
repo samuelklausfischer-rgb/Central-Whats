@@ -1,6 +1,16 @@
 import { useEffect, useState } from 'react'
-import { GripVertical } from 'lucide-react'
+import { GripVertical, Trash2 } from 'lucide-react'
 import pb from '@/lib/pocketbase/client'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { useAuth } from '@/hooks/use-auth'
 import { useRealtime } from '@/hooks/use-realtime'
 import { useToast } from '@/hooks/use-toast'
@@ -28,6 +38,7 @@ export default function CRM() {
   const { toast } = useToast()
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
+  const [taskToDelete, setTaskToDelete] = useState<string | null>(null)
 
   const fetchTasks = async () => {
     try {
@@ -52,6 +63,19 @@ export default function CRM() {
   useRealtime('tasks', () => {
     fetchTasks()
   })
+
+  const confirmDeleteTask = async () => {
+    if (!taskToDelete) return
+    const id = taskToDelete
+    setTaskToDelete(null)
+    try {
+      await pb.collection('tasks').delete(id)
+      setTasks((prev) => prev.filter((t) => t.id !== id))
+      toast({ title: 'Task deleted successfully' })
+    } catch (err) {
+      toast({ title: 'Failed to delete task. Please try again.', variant: 'destructive' })
+    }
+  }
 
   const updateTaskStatus = async (taskId: string, newStatus: Task['status']) => {
     try {
@@ -153,7 +177,21 @@ export default function CRM() {
                         <h4 className="font-medium text-sm text-foreground/90 leading-tight">
                           {task.title}
                         </h4>
-                        <GripVertical className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 mt-0.5" />
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 mt-0.5">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setTaskToDelete(task.id)
+                            }}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            className="p-1 hover:bg-red-500/20 rounded text-red-400 hover:text-red-500 transition-colors"
+                            title="Delete task"
+                            type="button"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                          <GripVertical className="h-4 w-4 text-muted-foreground" />
+                        </div>
                       </div>
                       {task.description && (
                         <p className="text-xs text-muted-foreground line-clamp-2 mb-3 break-words">
@@ -195,6 +233,28 @@ export default function CRM() {
           )
         })}
       </div>
+
+      <AlertDialog open={!!taskToDelete} onOpenChange={(open) => !open && setTaskToDelete(null)}>
+        <AlertDialogContent className="bg-zinc-950 border-white/10 text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to delete this task?</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              This action cannot be undone. This will permanently delete the task.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-transparent border-white/10 text-white hover:bg-white/10 hover:text-white">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteTask}
+              className="bg-red-500 text-white hover:bg-red-600"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
