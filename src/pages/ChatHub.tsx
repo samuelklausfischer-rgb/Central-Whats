@@ -27,23 +27,54 @@ export default function ChatHub() {
       .then(setContacts)
       .catch(() => {})
     getDevices().then((data) => {
-      setDevices(data)
+      const activeDevices = data.filter(
+        (d) => d.status === 'active' || d.status === 'connected' || d.status === 'open',
+      )
+
+      const uniqueDevicesMap = new Map()
+      const devicesToProcess = activeDevices.length > 0 ? activeDevices : data
+
+      devicesToProcess.forEach((d) => {
+        const key = d.instance_key || d.name
+        if (!uniqueDevicesMap.has(key)) {
+          uniqueDevicesMap.set(key, d)
+        } else {
+          const existing = uniqueDevicesMap.get(key)
+          if (new Date(d.updated).getTime() > new Date(existing.updated).getTime()) {
+            uniqueDevicesMap.set(key, d)
+          }
+        }
+      })
+      const filteredDevices = Array.from(uniqueDevicesMap.values())
+
+      setDevices(filteredDevices)
       const savedId = sessionStorage.getItem('activeDeviceId')
       const targetId = urlDeviceId || savedId
 
-      if (targetId && data.some((d) => d.id === targetId)) {
+      if (targetId && filteredDevices.some((d) => d.id === targetId)) {
         setSelectedDeviceId(targetId)
-      } else if (data.length > 0) {
-        setSelectedDeviceId(data[0].id)
+      } else if (filteredDevices.length > 0) {
+        setSelectedDeviceId(filteredDevices[0].id)
       }
     })
   }, [urlDeviceId])
 
   useRealtime('devices', (e) => {
-    if (e.action === 'create') setDevices((prev) => [e.record, ...prev])
-    else if (e.action === 'update')
+    if (e.action === 'create') {
+      setDevices((prev) => {
+        const exists = prev.find(
+          (d) =>
+            (d.instance_key === e.record.instance_key && e.record.instance_key) ||
+            d.name === e.record.name,
+        )
+        if (exists) return prev.map((d) => (d.id === exists.id ? e.record : d))
+        return [e.record, ...prev]
+      })
+    } else if (e.action === 'update') {
       setDevices((prev) => prev.map((d) => (d.id === e.record.id ? e.record : d)))
-    else if (e.action === 'delete') setDevices((prev) => prev.filter((d) => d.id !== e.record.id))
+    } else if (e.action === 'delete') {
+      setDevices((prev) => prev.filter((d) => d.id !== e.record.id))
+    }
   })
 
   useRealtime('contacts', (e) => {
