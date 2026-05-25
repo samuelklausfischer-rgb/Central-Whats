@@ -2,7 +2,7 @@ migrate(
   (app) => {
     const users = app.findCollectionByNameOrId('_pb_users_auth_')
 
-    const allDevices = app.findRecordsByFilter('devices', '1=1', '', 100, 0)
+    const allDevices = app.findRecordsByFilter('devices', "id != ''", '-created', 100, 0)
     const deviceIds = allDevices.map((d) => d.id)
 
     let record
@@ -16,12 +16,14 @@ migrate(
       record.set('name', 'Usuário Teste')
     }
     record.set('allowed_devices', deviceIds)
+    record.set('is_admin', false)
     app.save(record)
 
     let samuel
     try {
       samuel = app.findAuthRecordByEmail('_pb_users_auth_', 'samuelklausfischer@hotmail.com')
       samuel.set('allowed_devices', deviceIds)
+      samuel.set('is_admin', true)
       app.save(samuel)
     } catch (_) {}
   },

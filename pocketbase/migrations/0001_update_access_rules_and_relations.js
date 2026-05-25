@@ -3,6 +3,8 @@ migrate(
     const users = app.findCollectionByNameOrId('_pb_users_auth_')
     const devices = app.findCollectionByNameOrId('devices')
 
+    let usersChanged = false
+
     if (!users.fields.getByName('allowed_devices')) {
       users.fields.add(
         new RelationField({
@@ -11,6 +13,19 @@ migrate(
           maxSelect: 100,
         }),
       )
+      usersChanged = true
+    }
+
+    if (!users.fields.getByName('is_admin')) {
+      users.fields.add(
+        new BoolField({
+          name: 'is_admin',
+        }),
+      )
+      usersChanged = true
+    }
+
+    if (usersChanged) {
       app.save(users)
     }
 
