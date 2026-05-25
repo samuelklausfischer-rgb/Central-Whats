@@ -1,8 +1,15 @@
 migrate(
   (app) => {
-    const users = app.findCollectionByNameOrId('_pb_users_auth_')
+    // Retry deploy due to previous gateway HTML error
+    let users
     try {
-      app.findAuthRecordByEmail('_pb_users_auth_', 'usuario.teste@example.com')
+      users = app.findCollectionByNameOrId('users')
+    } catch (_) {
+      return
+    }
+
+    try {
+      app.findAuthRecordByEmail('users', 'usuario.teste@example.com')
       return // already exists
     } catch (_) {}
 
@@ -16,7 +23,7 @@ migrate(
   },
   (app) => {
     try {
-      const record = app.findAuthRecordByEmail('_pb_users_auth_', 'usuario.teste@example.com')
+      const record = app.findAuthRecordByEmail('users', 'usuario.teste@example.com')
       app.delete(record)
     } catch (_) {}
   },

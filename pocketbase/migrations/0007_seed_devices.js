@@ -1,11 +1,18 @@
 migrate(
   (app) => {
-    const devices = app.findCollectionByNameOrId('devices')
-    const users = app.findCollectionByNameOrId('_pb_users_auth_')
+    // Retry deploy due to previous gateway HTML error
+    let devices
+    let users
+    try {
+      devices = app.findCollectionByNameOrId('devices')
+      users = app.findCollectionByNameOrId('users')
+    } catch (_) {
+      return
+    }
 
     let userTeste
     try {
-      userTeste = app.findAuthRecordByEmail('_pb_users_auth_', 'usuario.teste@example.com')
+      userTeste = app.findAuthRecordByEmail('users', 'usuario.teste@example.com')
     } catch (_) {
       return
     }
@@ -32,8 +39,8 @@ migrate(
       app.save(dev2)
     }
 
-    const allowed = userTeste.get('allowed_devices') || []
-    const newAllowed = [...allowed]
+    const allowed = userTeste.get('allowed_devices')
+    const newAllowed = Array.isArray(allowed) ? [...allowed] : []
     let modified = false
     if (!newAllowed.includes(dev1.id)) {
       newAllowed.push(dev1.id)

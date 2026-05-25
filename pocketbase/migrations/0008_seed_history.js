@@ -1,7 +1,14 @@
 migrate(
   (app) => {
-    const messages = app.findCollectionByNameOrId('messages')
-    const contacts = app.findCollectionByNameOrId('contacts')
+    // Retry deploy due to previous gateway HTML error
+    let messages
+    let contacts
+    try {
+      messages = app.findCollectionByNameOrId('messages')
+      contacts = app.findCollectionByNameOrId('contacts')
+    } catch (_) {
+      return
+    }
 
     let dev1
     try {
